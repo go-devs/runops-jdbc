@@ -1,6 +1,7 @@
 package ninja.ebanx.runops;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,13 +18,15 @@ class RunopsDriverTest {
 
     private static final String CONNECTION_STRING = "jdbc:runops://xpto";
 
-    static {
+    @BeforeAll
+    static void initAll() {
         try {
             Class.forName("ninja.ebanx.runops.RunopsDriver");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
+
     @Test
     void acceptsURL() throws SQLException {
         var drv = DriverManager.getDriver(CONNECTION_STRING);
@@ -44,5 +47,14 @@ class RunopsDriverTest {
         // Assert
         assertEquals(dpi[0].name, "config");
         assertEquals(dpi[0].value, "~/.runops/config");
+    }
+
+    @Test
+    void connect() throws SQLException {
+        // Arrange
+        // Act
+        var conn = DriverManager.getConnection(CONNECTION_STRING);
+        // Assert
+        assertInstanceOf(RunopsConnection.class, conn);
     }
 }

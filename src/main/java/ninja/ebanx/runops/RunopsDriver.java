@@ -19,11 +19,14 @@ public class RunopsDriver implements Driver {
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
-        return null;
+        if (!this.acceptsURL(url)) {
+            throw new SQLException("invalid url");
+        }
+        return new RunopsConnection(url, info);
     }
 
     @Override
-    public boolean acceptsURL(String url) throws SQLException {
+    public boolean acceptsURL(String url) {
         return url.startsWith(URI_PREFIX);
     }
 
