@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 public class RunopsDriver implements Driver {
 
     private static final String URI_PREFIX = "jdbc:runops";
+    private static final Logger logger = Logger.getLogger("RUNOPS-JDBC");
 
     static {
         try {
@@ -22,7 +23,7 @@ public class RunopsDriver implements Driver {
         if (!this.acceptsURL(url)) {
             throw new SQLException("invalid url");
         }
-        return new RunopsConnection(url, info);
+        return new RunopsConnection(url, info, this.getParentLogger());
     }
 
     @Override
@@ -47,7 +48,7 @@ public class RunopsDriver implements Driver {
 
     @Override
     public int getMinorVersion() {
-        return 0;
+        return 1;
     }
 
     @Override
@@ -56,7 +57,7 @@ public class RunopsDriver implements Driver {
     }
 
     @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return null;
+    public Logger getParentLogger() {
+        return RunopsDriver.logger;
     }
 }

@@ -5,10 +5,13 @@ import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class RunopsConnection implements Connection {
     private final String target;
     private final String config;
+    private final Logger logger;
 
     public String getTarget() {
         return target;
@@ -17,10 +20,12 @@ public class RunopsConnection implements Connection {
     public String getConfig() {
         return config;
     }
-    public RunopsConnection(String url, Properties info) {
+    public RunopsConnection(String url, Properties info, Logger logger) {
         URI uri = URI.create(url.substring(5));
         this.target = uri.getHost();
         this.config = info.getProperty("config");
+        this.logger = logger;
+        logger.log(Level.INFO, "connection created");
     }
 
     @Override
