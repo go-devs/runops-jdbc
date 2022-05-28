@@ -1,6 +1,7 @@
 package ninja.ebanx.runops;
 
 import java.sql.*;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -28,7 +29,12 @@ public class RunopsDriver implements Driver {
 
     @Override
     public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-        return new DriverPropertyInfo[0];
+        if (Objects.equals(info.getProperty("config"), "")) {
+            throw new SQLException("invalid config file");
+        }
+        return new DriverPropertyInfo[] {
+                new DriverPropertyInfo("config", "~/.runops/config")
+        };
     }
 
     @Override
