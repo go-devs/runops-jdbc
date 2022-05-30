@@ -5,14 +5,14 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-public class RunopsDriver implements Driver {
+public class Driver implements java.sql.Driver {
 
     private static final String URI_PREFIX = "jdbc:runops";
     private static final Logger logger = Logger.getLogger("RUNOPS-JDBC");
 
     static {
         try {
-            java.sql.DriverManager.registerDriver(new RunopsDriver());
+            java.sql.DriverManager.registerDriver(new Driver());
         } catch (SQLException ex) {
             throw new RuntimeException("Can't register driver!");
         }
@@ -58,6 +58,6 @@ public class RunopsDriver implements Driver {
 
     @Override
     public Logger getParentLogger() {
-        return RunopsDriver.logger;
+        return Driver.logger;
     }
 }

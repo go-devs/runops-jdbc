@@ -1,12 +1,10 @@
 package ninja.ebanx.runops;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
@@ -14,21 +12,21 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class RunopsDriverTest {
+class DriverTest {
 
     private static final String CONNECTION_STRING = "jdbc:runops://xpto";
 
     @Test
     void acceptsURL() throws SQLException {
         var drv = DriverManager.getDriver(CONNECTION_STRING);
-        assertInstanceOf(RunopsDriver.class, drv);
+        assertInstanceOf(Driver.class, drv);
     }
 
     @Test
     void getPropertyInfo() throws SQLException, IOException {
         // Arrange
         Path path = Files.createTempFile("testFile", ".txt");
-        Driver drv = DriverManager.getDriver(CONNECTION_STRING);
+        java.sql.Driver drv = DriverManager.getDriver(CONNECTION_STRING);
         var p = new Properties();
         p.setProperty("config", path.toString());
 
