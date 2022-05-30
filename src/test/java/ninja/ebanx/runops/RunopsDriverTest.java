@@ -18,15 +18,6 @@ class RunopsDriverTest {
 
     private static final String CONNECTION_STRING = "jdbc:runops://xpto";
 
-    @BeforeAll
-    static void initAll() {
-        try {
-            Class.forName("ninja.ebanx.runops.RunopsDriver");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Test
     void acceptsURL() throws SQLException {
         var drv = DriverManager.getDriver(CONNECTION_STRING);

@@ -25,12 +25,12 @@ public class RunopsConnection implements Connection {
         this.target = uri.getHost();
         this.config = info.getProperty("config");
         this.logger = logger;
-        logger.log(Level.INFO, "connection created");
+        logger.info("connection created");
     }
 
     @Override
     public Statement createStatement() throws SQLException {
-        return null;
+        return new RunopsStatement(target, logger);
     }
 
     @Override
@@ -69,12 +69,12 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public void close() throws SQLException {
-
+    public void close() {
+        logger.info("connection closed");
     }
 
     @Override
-    public boolean isClosed() throws SQLException {
+    public boolean isClosed() {
         return false;
     }
 

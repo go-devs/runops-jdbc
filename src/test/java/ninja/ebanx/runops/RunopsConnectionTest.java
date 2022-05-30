@@ -10,16 +10,6 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RunopsConnectionTest {
-
-    @BeforeAll
-    static void initAll() {
-        try {
-            Class.forName("ninja.ebanx.runops.RunopsDriver");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Test
     void targetAndConfig() throws SQLException {
         // Arrange

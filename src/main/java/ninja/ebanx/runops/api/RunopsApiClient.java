@@ -11,6 +11,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -23,6 +24,11 @@ public class RunopsApiClient {
 
     public RunopsApiClient(HttpClient httpClient) {
         client = httpClient;
+    }
+
+    public static RunopsApiClient create() {
+        var cli = HttpClientBuilder.create().build();
+        return new RunopsApiClient(cli);
     }
 
     public JSONArray listTargets() throws IOException {
@@ -68,6 +74,12 @@ public class RunopsApiClient {
     public JSONObject getTaskLogs(int id) throws IOException {
         var rsp = execute(createRequest("GET", "/tasks/" + id + "/logs"));
         return new JSONObject(EntityUtils.toString(rsp.getEntity()));
+    }
+
+    public String getTaskLogsData(String uri) throws IOException {
+        var req = new HttpGet(uri);
+        var rsp = client.execute(req);
+        return EntityUtils.toString(rsp.getEntity());
     }
 
     private HttpResponse execute(HttpRequest request) {
