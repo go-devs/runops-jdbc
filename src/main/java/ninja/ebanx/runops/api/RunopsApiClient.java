@@ -17,6 +17,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 
 public class RunopsApiClient {
     private static final String BASE_URI = "https://api.runops.io/v1";
@@ -76,10 +78,10 @@ public class RunopsApiClient {
         return new JSONObject(EntityUtils.toString(rsp.getEntity()));
     }
 
-    public String getTaskLogsData(String uri) throws IOException {
+    public InputStreamReader getTaskLogsData(String uri) throws IOException {
         var req = new HttpGet(uri);
         var rsp = client.execute(req);
-        return EntityUtils.toString(rsp.getEntity());
+        return new InputStreamReader(rsp.getEntity().getContent());
     }
 
     private HttpResponse execute(HttpRequest request) {

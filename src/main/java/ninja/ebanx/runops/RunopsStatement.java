@@ -3,7 +3,7 @@ package ninja.ebanx.runops;
 import ninja.ebanx.runops.api.RunopsApiClient;
 import org.json.JSONObject;
 
-import java.io.IOException;
+import java.io.*;
 import java.sql.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -14,7 +14,7 @@ public class RunopsStatement implements Statement {
     private final Logger logger;
 
     private final RunopsApiClient clientApi;
-    private String plainResult;
+    private Reader plainResult;
 
     public RunopsStatement(String target, Logger logger) throws SQLException {
         this.logger = logger;
@@ -102,7 +102,7 @@ public class RunopsStatement implements Statement {
     public boolean execute(String sql) throws SQLException {
         try {
             executeTask(sql);
-            return !plainResult.isEmpty();
+            return true;
         } catch (IOException e) {
             throw new SQLException(e);
         }
@@ -113,17 +113,17 @@ public class RunopsStatement implements Statement {
         int taskId = t.getInt("id");
         logger.info("task " + taskId + " created");
 
-        String plainResult = t.getString("task_logs");
-        if (plainResult.startsWith("https://")) {
+        if (t.getString("task_logs").startsWith("https://")) {
             var taskLog = clientApi.getTaskLogs(taskId);
             plainResult = clientApi.getTaskLogsData(taskLog.getString("logs_url"));
+        } else {
+            plainResult = new StringReader(t.getString("task_logs"));
         }
-        this.plainResult = plainResult;
     }
 
     @Override
     public ResultSet getResultSet() throws SQLException {
-        return null;
+        return new RunopsResultSet(plainResult);
     }
 
     @Override
