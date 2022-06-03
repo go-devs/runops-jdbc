@@ -9,12 +9,12 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 public class RunopsResultSet implements ResultSet {
     private final TSVReaderIterator readerIterator;
-    private List<String> current;
+    private String[] current;
 
     public RunopsResultSet(Reader data) {
         readerIterator = new TSVReaderIterator(data);
@@ -24,7 +24,12 @@ public class RunopsResultSet implements ResultSet {
     public boolean next() throws SQLException {
         var hasNext = readerIterator.hasNext();
         if (hasNext) {
-            current = readerIterator.next();
+            try {
+                current = readerIterator.next();
+            } catch (NoSuchElementException e) {
+                hasNext = false;
+                current = null;
+            }
         }
         return hasNext;
     }
@@ -45,7 +50,7 @@ public class RunopsResultSet implements ResultSet {
 
     @Override
     public String getString(int columnIndex) throws SQLException {
-        return current.get(columnIndex - 1);
+        return current[columnIndex - 1];
     }
 
     @Override

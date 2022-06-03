@@ -30,17 +30,22 @@ public class RunopsStatement implements Statement {
 
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
-        return null;
+        execute(sql);
+        return getResultSet();
     }
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
-        return 0;
+        throw new SQLFeatureNotSupportedException("INSERT, UPDATE, DELETE or DDL statements are not supported");
     }
 
     @Override
     public void close() throws SQLException {
-
+        try {
+            plainResult.close();
+        } catch (IOException e) {
+            throw new SQLException(e);
+        }
     }
 
     @Override
