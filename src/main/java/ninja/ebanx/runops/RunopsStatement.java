@@ -15,6 +15,7 @@ public class RunopsStatement implements Statement {
 
     private final RunopsApiClient clientApi;
     private Reader plainResult;
+    private int taskId;
 
     public RunopsStatement(String target, Logger logger) throws SQLException {
         this.logger = logger;
@@ -24,7 +25,7 @@ public class RunopsStatement implements Statement {
             this.target = clientApi.getTarget(target);
             logger.log(Level.INFO, "ready for statements at " + this.target.get("name"));
         } catch (IOException e) {
-            throw new SQLException("invalid target " + target);
+            throw new SQLException("invalid target " + target, e);
         }
     }
 
@@ -49,28 +50,28 @@ public class RunopsStatement implements Statement {
     }
 
     @Override
-    public int getMaxFieldSize() throws SQLException {
+    public int getMaxFieldSize() {
         return 0;
     }
 
     @Override
-    public void setMaxFieldSize(int max) throws SQLException {
-
+    public void setMaxFieldSize(int max) {
+        throw new UnsupportedOperationException("setMaxFieldSize not supported");
     }
 
     @Override
-    public int getMaxRows() throws SQLException {
+    public int getMaxRows() {
         return 0;
     }
 
     @Override
-    public void setMaxRows(int max) throws SQLException {
-
+    public void setMaxRows(int max) {
+        throw new UnsupportedOperationException("setMaxRows not supported");
     }
 
     @Override
     public void setEscapeProcessing(boolean enable) throws SQLException {
-
+        throw new UnsupportedOperationException("setEscapeProcessing not supported");
     }
 
     @Override
@@ -85,7 +86,14 @@ public class RunopsStatement implements Statement {
 
     @Override
     public void cancel() throws SQLException {
-
+        if (taskId == 0) {
+            return;
+        }
+        try {
+            clientApi.killTask(taskId);
+        } catch (IOException e) {
+            throw new SQLException(e);
+        }
     }
 
     @Override
@@ -108,14 +116,14 @@ public class RunopsStatement implements Statement {
         try {
             executeTask(sql);
             return true;
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             throw new SQLException(e);
         }
     }
 
-    private void executeTask(String sql) throws IOException {
+    private void executeTask(String sql) throws IOException, InterruptedException {
         var t = clientApi.createTask(target.getString("name"), sql);
-        int taskId = t.getInt("id");
+        taskId = t.getInt("id");
         logger.info("task " + taskId + " created");
 
         if (t.getString("task_logs").startsWith("https://")) {

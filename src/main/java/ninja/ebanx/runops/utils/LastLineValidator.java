@@ -15,6 +15,9 @@ public class LastLineValidator implements LineValidator {
 
     @Override
     public boolean isValid(String s) {
+        if (s == null) {
+            return false;
+        }
         Matcher matcher = pattern.matcher(s);
         return !matcher.find();
     }

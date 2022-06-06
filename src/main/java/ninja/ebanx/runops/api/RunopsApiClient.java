@@ -1,24 +1,17 @@
 package ninja.ebanx.runops.api;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 
 public class RunopsApiClient {
     private static final String BASE_URI = "https://api.runops.io/v1";
@@ -29,80 +22,87 @@ public class RunopsApiClient {
     }
 
     public static RunopsApiClient create() {
-        var cli = HttpClientBuilder.create().build();
+        var cli = HttpClient.newHttpClient();
         return new RunopsApiClient(cli);
     }
 
-    public JSONArray listTargets() throws IOException {
-        var req = (HttpUriRequest) createRequest(HttpGet.METHOD_NAME, "/targets");
-        var rsp = client.execute(req);
-        return new JSONArray(EntityUtils.toString(rsp.getEntity()));
+    public JSONArray listTargets() throws IOException, InterruptedException {
+        var req = createRequest("GET", "/targets");
+        var rsp = client.send(req, BodyHandlers.ofString());
+        return new JSONArray(rsp.body());
     }
 
     public JSONObject getTarget(String name) throws IOException {
-        var req = (HttpUriRequest) createRequest(HttpGet.METHOD_NAME, "/targets/" + name);
+        var req = createRequest("GET", "/targets/" + name);
         var rsp = execute(req);
-        return new JSONObject(EntityUtils.toString(rsp.getEntity()));
+        if (rsp.statusCode() != 200) {
+            throw new IOException(String.format("wrong status code: %d", rsp.statusCode()));
+        }
+        return new JSONObject(rsp.body());
     }
 
-    public JSONArray listTasks() throws IOException {
-        var rsp = execute(createRequest(HttpGet.METHOD_NAME, "/tasks"));
-        return new JSONArray(EntityUtils.toString(rsp.getEntity()));
+    public JSONArray listTasks() {
+        var rsp = execute(createRequest("GET", "/tasks"));
+        return new JSONArray(rsp.body());
     }
 
-    public JSONObject createTask(String target, String script) throws IOException {
+    public JSONObject createTask(String target, String script) {
         return createTask(target, script, null, null);
     }
 
-    public JSONObject createTask(String target, String script, String message, String taskType) throws IOException {
+    public JSONObject createTask(String target, String script, String message, String taskType) {
         var task = new JSONObject();
         task.put("target", target);
         task.put("script", script);
         task.put("message", message);
         task.put("type", taskType);
-        var entity = new StringEntity(
-                task.toString(),
-                ContentType.APPLICATION_JSON
-        );
-        var rsp = execute(createRequest(HttpPost.METHOD_NAME, "/tasks", entity));
-        return new JSONObject(EntityUtils.toString(rsp.getEntity()));
+        var entity = BodyPublishers.ofString(task.toString());
+        var rsp = execute(createRequest("POST", "/tasks", entity));
+        return new JSONObject(rsp.body());
     }
 
-    public JSONObject getTask(int id) throws IOException {
+    public JSONObject getTask(int id) {
         var rsp = execute(createRequest("GET", "/tasks/" + id));
-        return new JSONObject(EntityUtils.toString(rsp.getEntity()));
+        return new JSONObject(rsp.body());
     }
 
-    public JSONObject getTaskLogs(int id) throws IOException {
+    public JSONObject getTaskLogs(int id) {
         var rsp = execute(createRequest("GET", "/tasks/" + id + "/logs"));
-        return new JSONObject(EntityUtils.toString(rsp.getEntity()));
+        return new JSONObject(rsp.body());
     }
 
-    public InputStreamReader getTaskLogsData(String uri) throws IOException {
-        var req = new HttpGet(uri);
-        var rsp = client.execute(req);
-        return new InputStreamReader(rsp.getEntity().getContent());
+    public InputStreamReader getTaskLogsData(String uri) throws IOException, InterruptedException {
+        var req = HttpRequest.newBuilder(URI.create(uri)).build();
+        var rsp = client.send(req, BodyHandlers.ofInputStream());
+        return new InputStreamReader(rsp.body());
     }
 
-    private HttpResponse execute(HttpRequest request) {
+    public void killTask(int id) throws IOException {
+        var rsp = execute(createRequest("POST","/tasks/" + id + "/kill"));
+        if (rsp.statusCode() != 202) {
+            throw new IOException(String.format("wrong status code: %d", rsp.statusCode()));
+        }
+    }
+
+    private HttpResponse<String> execute(HttpRequest request) {
         try {
-            return client.execute((HttpUriRequest) request);
-        } catch (IOException e) {
+            return client.send(request, BodyHandlers.ofString());
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     private HttpRequest createRequest(String method, String resource) {
-        return createRequest(method, resource, null);
+        return createRequest(method, resource, BodyPublishers.noBody());
     }
 
-    private HttpRequest createRequest(String method, String resource, HttpEntity entity) {
-        return RequestBuilder.create(method)
-                .addHeader(HttpHeaders.AUTHORIZATION, AuthorizationResolver.resolve())
-                .addHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType())
-                .addHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType())
-                .setUri(BASE_URI + resource)
-                .setEntity(entity)
+    private HttpRequest createRequest(String method, String resource, BodyPublisher body) {
+        return HttpRequest.newBuilder()
+                .method(method, body)
+                .header("Authorization", AuthorizationResolver.resolve())
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .uri(URI.create(BASE_URI + resource))
                 .build();
     }
 }
