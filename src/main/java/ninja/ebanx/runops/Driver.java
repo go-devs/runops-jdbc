@@ -43,12 +43,12 @@ public class Driver implements java.sql.Driver {
 
     @Override
     public int getMajorVersion() {
-        return 0;
+        return Version.MAJOR_VERSION;
     }
 
     @Override
     public int getMinorVersion() {
-        return 1;
+        return Version.MINOR_VERSION;
     }
 
     @Override
@@ -59,5 +59,15 @@ public class Driver implements java.sql.Driver {
     @Override
     public Logger getParentLogger() {
         return Driver.logger;
+    }
+
+    public static class Version {
+        public static final String DRIVER_NAME = "Runops JDBC Driver";
+        public static final int MAJOR_VERSION = 0;
+        public static final int MINOR_VERSION = 1;
+
+        public static String driverVersion() {
+            return String.format("%d.%d", MAJOR_VERSION, MINOR_VERSION);
+        }
     }
 }

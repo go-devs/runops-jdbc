@@ -16,6 +16,7 @@ public class RunopsStatement implements Statement {
     private final RunopsApiClient clientApi;
     private Reader plainResult;
     private int taskId;
+    private int maxRows;
 
     public RunopsStatement(String target, Logger logger) throws SQLException {
         this.logger = logger;
@@ -61,12 +62,14 @@ public class RunopsStatement implements Statement {
 
     @Override
     public int getMaxRows() {
-        return 0;
+        return maxRows;
     }
 
     @Override
-    public void setMaxRows(int max) {
-        throw new UnsupportedOperationException("setMaxRows not supported");
+    public void setMaxRows(int max) throws SQLException {
+        if (max < 0)
+            throw new SQLException("max rows must be >= 0");
+        maxRows = max;
     }
 
     @Override
@@ -98,7 +101,7 @@ public class RunopsStatement implements Statement {
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        return null;
+        throw new UnsupportedOperationException("getWarnings not supported");
     }
 
     @Override
@@ -196,7 +199,7 @@ public class RunopsStatement implements Statement {
 
     @Override
     public Connection getConnection() throws SQLException {
-        return null;
+        throw new UnsupportedOperationException("getConnection not supported");
     }
 
     @Override
@@ -206,7 +209,7 @@ public class RunopsStatement implements Statement {
 
     @Override
     public ResultSet getGeneratedKeys() throws SQLException {
-        return null;
+        throw new UnsupportedOperationException("getGeneratedKeys not supported");
     }
 
     @Override
@@ -271,7 +274,7 @@ public class RunopsStatement implements Statement {
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        return null;
+        throw new UnsupportedOperationException("unwrap not supported");
     }
 
     @Override
