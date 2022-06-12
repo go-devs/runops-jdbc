@@ -12,15 +12,21 @@ import java.util.Iterator;
 public class TSVReaderIterator implements Iterator<String[]>, Closeable {
     private final CSVReader reader;
     private final Iterator<String[]> iterator;
+    private final String[] header;
+
+    public String[] getHeader() {
+        return header;
+    }
 
     public TSVReaderIterator(Reader in) {
         var csvParser = new CSVParserBuilder().withSeparator('\t').build();
         reader = new CSVReaderBuilder(in)
                 .withCSVParser(csvParser)
-                .withSkipLines(1)
+//                .withSkipLines(1)
                 .withLineValidator(new LastLineValidator())
                 .build();
         iterator = reader.iterator();
+        header = iterator.next();
     }
 
     @Override

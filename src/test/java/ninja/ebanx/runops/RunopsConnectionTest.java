@@ -1,6 +1,5 @@
 package ninja.ebanx.runops;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.sql.DriverManager;

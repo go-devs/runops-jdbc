@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -130,7 +131,8 @@ public class RunopsResultSet implements ResultSet {
 
     @Override
     public String getString(String columnLabel) throws SQLException {
-        return null;
+        int idx = Arrays.asList(readerIterator.getHeader()).indexOf(columnLabel);
+        return getString(idx+1);
     }
 
     @Override

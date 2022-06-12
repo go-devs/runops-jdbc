@@ -19,9 +19,13 @@ public class RunopsStatement implements Statement {
     private int maxRows;
 
     public RunopsStatement(String target, Logger logger) throws SQLException {
+        this(RunopsApiClient.create(), target, logger);
+    }
+
+    public RunopsStatement(RunopsApiClient client, String target, Logger logger) throws SQLException {
         this.logger = logger;
 
-        clientApi = RunopsApiClient.create();
+        clientApi = client;
         try {
             this.target = clientApi.getTarget(target);
             logger.log(Level.INFO, "ready for statements at " + this.target.get("name"));
