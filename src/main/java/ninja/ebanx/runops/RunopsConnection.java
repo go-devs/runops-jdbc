@@ -1,5 +1,8 @@
 package ninja.ebanx.runops;
 
+import ninja.ebanx.runops.postgres.ServerVersion;
+import ninja.ebanx.runops.postgres.TypeInfo;
+
 import java.net.URI;
 import java.sql.*;
 import java.util.Map;
@@ -11,6 +14,8 @@ public class RunopsConnection implements Connection {
     private final String target;
     private final String config;
     private final Logger logger;
+    private final ServerVersion version;
+    private TypeInfo typeInfo;
 
     public String getTarget() {
         return target;
@@ -25,6 +30,8 @@ public class RunopsConnection implements Connection {
         this.config = info.getProperty("config");
         this.logger = logger;
         logger.info("connection created");
+        // TODO get current version
+        version = ServerVersion.v10;
     }
 
     @Override
@@ -295,5 +302,28 @@ public class RunopsConnection implements Connection {
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
+    }
+
+    public String getURL() {
+        return "";
+    }
+
+    public String getUserName() {
+        return "";
+    }
+
+    public boolean haveMinimumServerVersion(ServerVersion ver) {
+        return version.getVersionNum() >= ver.getVersionNum();
+    }
+
+    public boolean getHideUnprivilegedObjects() {
+        return false;
+    }
+
+    public TypeInfo getTypeInfo() {
+        if (typeInfo == null) {
+            typeInfo = new TypeInfo(this, Integer.MAX_VALUE);
+        }
+        return typeInfo;
     }
 }
