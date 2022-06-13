@@ -33,7 +33,7 @@ class RunopsResultSetTest extends Mockito {
                     "id":118828,
                     "reviews":[],
                     "elapsed_time_ms":161,
-                    "target":"read-akkad-production"
+                    "target":"xpto"
                 }
                 """);
         when(httpClient.send(any(HttpRequest.class), ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
