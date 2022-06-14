@@ -65,6 +65,8 @@ public class Driver implements java.sql.Driver {
         public static final String DRIVER_NAME = "Runops JDBC Driver";
         public static final int MAJOR_VERSION = 0;
         public static final int MINOR_VERSION = 1;
+        public static final int JDBC_MAJOR_VERSION = 4;
+        public static final int JDBC_MINOR_VERSION = 2;
 
         public static String driverVersion() {
             return String.format("%d.%d", MAJOR_VERSION, MINOR_VERSION);
