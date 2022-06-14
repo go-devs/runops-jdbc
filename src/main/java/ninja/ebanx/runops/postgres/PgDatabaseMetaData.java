@@ -6,30 +6,22 @@ package ninja.ebanx.runops.postgres;
  */
 
 
+import com.opencsv.CSVWriterBuilder;
 import ninja.ebanx.runops.Driver;
 import ninja.ebanx.runops.RunopsConnection;
+import ninja.ebanx.runops.RunopsResultSet;
 import ninja.ebanx.runops.utils.BlackHole;
 import org.checkerframework.checker.nullness.qual.KeyFor;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.math.BigInteger;
-import java.sql.Array;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.RowIdLifetime;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.sql.*;
+import java.util.*;
 
+import static ninja.ebanx.runops.Driver.Version.JDBC_MAJOR_VERSION;
+import static ninja.ebanx.runops.Driver.Version.JDBC_MINOR_VERSION;
 import static ninja.ebanx.runops.utils.Nullness.castNonNull;
 
 public class PgDatabaseMetaData implements DatabaseMetaData {
@@ -1190,8 +1182,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         rs.close();
         stmt.close();
 
-        // TODO return ((BaseStatement) createMetaDataStatement()).createDriverResultSet(f, v);
-        return createMetaDataStatement().getResultSet();
+        return createDriverResultSet(f, v);
     }
 
     @Override
@@ -1397,7 +1388,27 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         tuple[0] = Utils.encodeString(connection.getCatalog());
         v.add(new Tuple(tuple));
 
-        return ((BaseStatement) createMetaDataStatement()).createDriverResultSet(f, v);
+        return createDriverResultSet(f, v);
+    }
+
+    private ResultSet createDriverResultSet(Field[] f, List<Tuple> v) {
+        StringWriter writer = new StringWriter();
+        var csv = new CSVWriterBuilder(writer).withSeparator('\t').build();
+        List<Field> lf = Arrays.stream(f).toList();
+        var aStr = new ArrayList<String>();
+        lf.forEach(field -> aStr.add(field.getColumnLabel()));
+        csv.writeNext(aStr.toArray(new String[f.length]));
+        v.forEach(tuple -> {
+            var sl = new ArrayList<String>();
+            Arrays.stream(tuple.data).toList().forEach(item -> {
+                assert item != null;
+                sl.add(new String(item));
+            });
+            csv.writeNext(sl.toArray(new String[0]));
+        });
+
+        var sr = new StringReader(writer.toString());
+        return new RunopsResultSet(sr);
     }
 
     @Override
@@ -1414,7 +1425,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
             v.add(new Tuple(tuple));
         }
 
-        return ((BaseStatement) createMetaDataStatement()).createDriverResultSet(f, v);
+        return createDriverResultSet(f, v);
     }
 
     public ResultSet getColumns(@Nullable String catalog, @Nullable String schemaPattern,
@@ -1639,7 +1650,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         rs.close();
         stmt.close();
 
-        return ((BaseStatement) createMetaDataStatement()).createDriverResultSet(f, v);
+        return createDriverResultSet(f, v);
     }
 
     @Override
@@ -1724,7 +1735,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         rs.close();
         stmt.close();
 
-        return ((BaseStatement) createMetaDataStatement()).createDriverResultSet(f, v);
+        return createDriverResultSet(f, v);
     }
 
     @Override
@@ -1795,7 +1806,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         rs.close();
         stmt.close();
 
-        return ((BaseStatement) createMetaDataStatement()).createDriverResultSet(f, v);
+        return createDriverResultSet(f, v);
     }
 
     /**
@@ -2002,7 +2013,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         rs.close();
         stmt.close();
 
-        return ((BaseStatement) createMetaDataStatement()).createDriverResultSet(f, v);
+        return createDriverResultSet(f, v);
     }
 
     public ResultSet getVersionColumns(
@@ -2045,7 +2056,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         /*
          * Perhaps we should check that the given catalog.schema.table actually exists. -KJ
          */
-        return ((BaseStatement) createMetaDataStatement()).createDriverResultSet(f, v);
+        return createDriverResultSet(f, v);
     }
 
     public ResultSet getPrimaryKeys(@Nullable String catalog, @Nullable String schema, String table)
@@ -2313,9 +2324,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                 Utils.encodeString(Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
 
         TypeInfo ti = connection.getTypeInfo();
-        if (ti instanceof TypeInfoCache) {
-            ((TypeInfoCache) ti).cacheSQLTypes();
-        }
+        ti.cacheSQLTypes();
 
         while (rs.next()) {
             byte[] @Nullable [] tuple = new byte[19][];
@@ -2388,7 +2397,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                 return (i1 < i2) ? -1 : ((i1 == i2) ? 0 : 1);
             }
         });
-        return ((BaseStatement) createMetaDataStatement()).createDriverResultSet(f, v);
+        return createDriverResultSet(f, v);
     }
 
     public ResultSet getIndexInfo(
@@ -2514,7 +2523,8 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
 
         sql += " ORDER BY NON_UNIQUE, TYPE, INDEX_NAME, ORDINAL_POSITION ";
 
-        return ((PgResultSet)createMetaDataStatement().executeQuery(sql)).upperCaseFieldLabels();
+//        return ((PgResultSet)createMetaDataStatement().executeQuery(sql)).upperCaseFieldLabels();
+        return createMetaDataStatement().executeQuery(sql);
     }
 
     // ** JDBC 2 Extensions **
@@ -2683,7 +2693,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public RowIdLifetime getRowIdLifetime() throws SQLException {
-        throw org.postgresql.Driver.notImplemented(this.getClass(), "getRowIdLifetime()");
+        throw new SQLFeatureNotSupportedException(this.getClass() + ".getRowIdLifetime()");
     }
 
     @Override
@@ -2715,7 +2725,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
             v.add(new Tuple(tuple));
         }
 
-        return ((BaseStatement) createMetaDataStatement()).createDriverResultSet(f, v);
+        return createDriverResultSet(f, v);
     }
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
@@ -2969,14 +2979,13 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         rs.close();
         stmt.close();
 
-        return ((BaseStatement) createMetaDataStatement()).createDriverResultSet(f, v);
+        return createDriverResultSet(f, v);
     }
 
     public ResultSet getPseudoColumns(@Nullable String catalog, @Nullable String schemaPattern,
                                       @Nullable String tableNamePattern, @Nullable String columnNamePattern)
             throws SQLException {
-        throw org.postgresql.Driver.notImplemented(this.getClass(),
-                "getPseudoColumns(String, String, String, String)");
+        throw new SQLFeatureNotSupportedException(this.getClass() + ".getPseudoColumns(String, String, String, String)");
     }
 
     public boolean generatedKeyAlwaysReturned() throws SQLException {
@@ -3005,21 +3014,18 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getSuperTypes(@Nullable String catalog, @Nullable String schemaPattern,
                                    @Nullable String typeNamePattern)
             throws SQLException {
-        throw org.postgresql.Driver.notImplemented(this.getClass(),
-                "getSuperTypes(String,String,String)");
+        throw new SQLFeatureNotSupportedException(this.getClass() + ".getSuperTypes(String,String,String)");
     }
 
     public ResultSet getSuperTables(@Nullable String catalog, @Nullable String schemaPattern,
                                     @Nullable String tableNamePattern)
             throws SQLException {
-        throw org.postgresql.Driver.notImplemented(this.getClass(),
-                "getSuperTables(String,String,String,String)");
+        throw new SQLFeatureNotSupportedException(this.getClass() + ".getSuperTables(String,String,String,String)");
     }
 
     public ResultSet getAttributes(@Nullable String catalog, @Nullable String schemaPattern,
                                    @Nullable String typeNamePattern, @Nullable String attributeNamePattern) throws SQLException {
-        throw org.postgresql.Driver.notImplemented(this.getClass(),
-                "getAttributes(String,String,String,String)");
+        throw new SQLFeatureNotSupportedException(this.getClass() + ".getAttributes(String,String,String,String)");
     }
 
     public boolean supportsResultSetHoldability(int holdability) throws SQLException {
@@ -3032,22 +3038,24 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getDatabaseMajorVersion() throws SQLException {
-        return connection.getServerMajorVersion();
+        // TODO return connection.getServerMajorVersion();
+        return 10;
     }
 
     @Override
     public int getDatabaseMinorVersion() throws SQLException {
-        return connection.getServerMinorVersion();
+        // TODO return connection.getServerMinorVersion();
+        return 4;
     }
 
     @Override
     public int getJDBCMajorVersion() {
-        return org.postgresql.util.DriverInfo.JDBC_MAJOR_VERSION;
+        return JDBC_MAJOR_VERSION;
     }
 
     @Override
     public int getJDBCMinorVersion() {
-        return org.postgresql.util.DriverInfo.JDBC_MINOR_VERSION;
+        return JDBC_MINOR_VERSION;
     }
 
     public int getSQLStateType() throws SQLException {
