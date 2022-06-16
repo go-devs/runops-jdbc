@@ -22,7 +22,7 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public boolean next() throws SQLException {
+    public boolean next() {
         var hasNext = readerIterator.hasNext();
         if (hasNext) {
             try {
@@ -32,7 +32,7 @@ public class RunopsResultSet implements ResultSet {
                 current = null;
             }
         }
-        return hasNext;
+        return (current != null) && hasNext;
     }
 
     @Override
