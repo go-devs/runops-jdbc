@@ -43,11 +43,14 @@ class RunopsResultSetTest extends Mockito {
         // Act
         try (var stmt = new RunopsStatement(roClient, "xpto", Logger.getAnonymousLogger())) {
             var rst = stmt.executeQuery("select * from information_schema.columns");
+            var rowCount = 0;
             while (rst.next()) {
                 // Assert
+                rowCount++;
                 assertEquals(rst.getString(1), rst.getString("id"));
                 assertEquals(rst.getString(2), rst.getString("name"));
             }
+            assertEquals(2, rowCount);
         }
     }
 }
