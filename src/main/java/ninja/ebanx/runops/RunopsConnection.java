@@ -1,5 +1,6 @@
 package ninja.ebanx.runops;
 
+import ninja.ebanx.runops.postgres.PgDatabaseMetaData;
 import ninja.ebanx.runops.postgres.ServerVersion;
 import ninja.ebanx.runops.postgres.TypeInfo;
 
@@ -85,8 +86,8 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public DatabaseMetaData getMetaData() throws SQLException {
-        throw new UnsupportedOperationException("getMetaData not supported");
+    public DatabaseMetaData getMetaData() {
+        return new PgDatabaseMetaData(this);
     }
 
     @Override
@@ -101,12 +102,12 @@ public class RunopsConnection implements Connection {
 
     @Override
     public void setCatalog(String catalog) throws SQLException {
-
+        throw new SQLException("change catalog is not allowed");
     }
 
     @Override
-    public String getCatalog() throws SQLException {
-        throw new UnsupportedOperationException("getCatalog not supported");
+    public String getCatalog() {
+        return target;
     }
 
     @Override
@@ -121,7 +122,7 @@ public class RunopsConnection implements Connection {
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        throw new UnsupportedOperationException("getWarnings not supported");
+        return null;
     }
 
     @Override
@@ -131,7 +132,11 @@ public class RunopsConnection implements Connection {
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
-        throw new UnsupportedOperationException("createStatement not supported");
+        if (resultSetType != ResultSet.TYPE_FORWARD_ONLY)
+            throw new SQLException("resultSetType %d not supported".formatted(resultSetType));
+        if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY)
+            throw new SQLException("resultSetConcurrency %d not supported".formatted(resultSetType));
+        return createStatement();
     }
 
     @Override
@@ -160,8 +165,8 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public int getHoldability() throws SQLException {
-        return 0;
+    public int getHoldability() {
+        return ResultSet.HOLD_CURSORS_OVER_COMMIT;
     }
 
     @Override
@@ -186,7 +191,9 @@ public class RunopsConnection implements Connection {
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-        throw new UnsupportedOperationException("createStatement not supported");
+        if (resultSetHoldability != ResultSet.HOLD_CURSORS_OVER_COMMIT)
+            throw new SQLException("resultSetType %d not supported".formatted(resultSetType));
+        return createStatement(resultSetType, resultSetConcurrency);
     }
 
     @Override

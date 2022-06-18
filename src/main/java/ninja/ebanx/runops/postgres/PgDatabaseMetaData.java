@@ -2679,7 +2679,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
     }
 
     protected Statement createMetaDataStatement() throws SQLException {
-        return connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+        return connection.createStatement(ResultSet.TYPE_FORWARD_ONLY,
                 ResultSet.CONCUR_READ_ONLY);
     }
 
