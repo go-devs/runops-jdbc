@@ -1,5 +1,6 @@
 package ninja.ebanx.runops;
 
+import ninja.ebanx.runops.postgres.PgResultSetMetaData;
 import ninja.ebanx.runops.utils.TSVReaderIterator;
 
 import java.io.IOException;
@@ -8,17 +9,17 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.sql.Date;
+import java.util.*;
 
 public class RunopsResultSet implements ResultSet {
     private final TSVReaderIterator readerIterator;
     private String[] current;
+    private final List<String> columns;
 
     public RunopsResultSet(Reader data) {
         readerIterator = new TSVReaderIterator(data);
+        columns = Arrays.asList(readerIterator.getHeader());
     }
 
     @Override
@@ -75,8 +76,8 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public long getLong(int columnIndex) throws SQLException {
-        return 0;
+    public long getLong(int columnIndex) {
+        return Long.parseLong(current[columnIndex - 1 ]);
     }
 
     @Override
@@ -156,8 +157,8 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public long getLong(String columnLabel) throws SQLException {
-        return 0;
+    public long getLong(String columnLabel) {
+        return getLong(columns.indexOf(columnLabel) + 1);
     }
 
     @Override
@@ -226,8 +227,8 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public ResultSetMetaData getMetaData() throws SQLException {
-        return null;
+    public ResultSetMetaData getMetaData() {
+        return new PgResultSetMetaData(readerIterator.getHeader());
     }
 
     @Override
@@ -331,8 +332,8 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public int getFetchDirection() throws SQLException {
-        return 0;
+    public int getFetchDirection() {
+        return ResultSet.FETCH_FORWARD;
     }
 
     @Override
@@ -346,8 +347,8 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public int getType() throws SQLException {
-        return 0;
+    public int getType() {
+        return ResultSet.TYPE_FORWARD_ONLY;
     }
 
     @Override
@@ -756,8 +757,8 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public boolean isClosed() throws SQLException {
-        return false;
+    public boolean isClosed() {
+        return readerIterator.isClosed();
     }
 
     @Override

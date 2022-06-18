@@ -50,6 +50,10 @@ public class TSVReaderIterator implements Iterator<String[]>, Closeable {
         reader.close();
     }
 
+    public boolean isClosed() {
+        return !iterator.hasNext();
+    }
+
     public boolean isValid(String s) {
         if (s == null) {
             return false;

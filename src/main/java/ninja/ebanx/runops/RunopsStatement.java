@@ -17,6 +17,7 @@ public class RunopsStatement implements Statement {
     private Reader plainResult;
     private int taskId;
     private int maxRows;
+    private volatile boolean isClosed = false;
 
     public RunopsStatement(String target, Logger logger) throws SQLException {
         this(RunopsApiClient.create(), target, logger);
@@ -49,6 +50,7 @@ public class RunopsStatement implements Statement {
     public void close() throws SQLException {
         try {
             plainResult.close();
+            isClosed = true;
         } catch (IOException e) {
             throw new SQLException(e);
         }
@@ -105,7 +107,8 @@ public class RunopsStatement implements Statement {
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        throw new UnsupportedOperationException("getWarnings not supported");
+//        throw new UnsupportedOperationException("getWarnings not supported");
+        return null;
     }
 
     @Override
@@ -147,8 +150,8 @@ public class RunopsStatement implements Statement {
     }
 
     @Override
-    public int getUpdateCount() throws SQLException {
-        return 0;
+    public int getUpdateCount() {
+        return -1;
     }
 
     @Override
@@ -162,8 +165,8 @@ public class RunopsStatement implements Statement {
     }
 
     @Override
-    public int getFetchDirection() throws SQLException {
-        return 0;
+    public int getFetchDirection() {
+        return ResultSet.FETCH_FORWARD;
     }
 
     @Override
@@ -182,8 +185,8 @@ public class RunopsStatement implements Statement {
     }
 
     @Override
-    public int getResultSetType() throws SQLException {
-        return 0;
+    public int getResultSetType() {
+        return ResultSet.TYPE_FORWARD_ONLY;
     }
 
     @Override
@@ -252,8 +255,8 @@ public class RunopsStatement implements Statement {
     }
 
     @Override
-    public boolean isClosed() throws SQLException {
-        return false;
+    public boolean isClosed() {
+        return isClosed;
     }
 
     @Override

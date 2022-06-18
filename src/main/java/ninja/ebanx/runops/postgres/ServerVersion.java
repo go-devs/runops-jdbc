@@ -33,9 +33,9 @@ public enum ServerVersion {
     static int parseServerVersionStr(String serverVersion) throws NumberFormatException {
         final int limit = 3;
         var parts = serverVersion.split("\\.", limit);
-        var pow = new int[] {4, 2, 0};
+        var pow = new int[] {10000, 100, 1};
         int version = 0;
-        for (int i = 0; i < limit; i++) {
+        for (int i = 0; i < parts.length; i++) {
             version += Integer.parseInt(parts[i]) * pow[i];
         }
         return version;
