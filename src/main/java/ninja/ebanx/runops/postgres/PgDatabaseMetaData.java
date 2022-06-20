@@ -1401,8 +1401,11 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         v.forEach(tuple -> {
             var sl = new ArrayList<String>();
             Arrays.stream(tuple.data).toList().forEach(item -> {
-                assert item != null;
-                sl.add(new String(item));
+                if (item == null) {
+                    sl.add("");
+                } else {
+                    sl.add(new String(item));
+                }
             });
             csv.writeNext(sl.toArray(new String[0]));
         });

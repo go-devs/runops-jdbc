@@ -42,7 +42,7 @@ public class RunopsConnection implements Connection {
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        throw new UnsupportedOperationException("prepareStatement not supported");
+        return new RunopsPreparedStatement(sql, target, logger);
     }
 
     @Override
