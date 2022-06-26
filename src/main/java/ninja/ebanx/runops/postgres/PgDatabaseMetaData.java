@@ -1261,8 +1261,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         }
         String sql = select + orderby;
 
-        // TODO ((PgResultSet)createMetaDataStatement().executeQuery(sql)).upperCaseFieldLabels();
-        return createMetaDataStatement().executeQuery(sql);
+        return ((RunopsResultSet)createMetaDataStatement().executeQuery(sql)).upperCaseFieldLabels();
     }
 
     private static final Map<String, Map<String, String>> tableTypeClauses;
@@ -2526,8 +2525,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
 
         sql += " ORDER BY NON_UNIQUE, TYPE, INDEX_NAME, ORDINAL_POSITION ";
 
-//        return ((PgResultSet)createMetaDataStatement().executeQuery(sql)).upperCaseFieldLabels();
-        return createMetaDataStatement().executeQuery(sql);
+        return ((RunopsResultSet)createMetaDataStatement().executeQuery(sql)).upperCaseFieldLabels();
     }
 
     // ** JDBC 2 Extensions **

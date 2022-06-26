@@ -51,13 +51,13 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public String getString(int columnIndex) throws SQLException {
+    public String getString(int columnIndex) {
         return current[columnIndex - 1];
     }
 
     @Override
-    public boolean getBoolean(int columnIndex) throws SQLException {
-        return false;
+    public boolean getBoolean(int columnIndex) {
+        return Boolean.parseBoolean(current[columnIndex - 1]);
     }
 
     @Override
@@ -66,13 +66,17 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public short getShort(int columnIndex) throws SQLException {
-        return 0;
+    public short getShort(int columnIndex) {
+        return Short.parseShort(current[columnIndex - 1]);
     }
 
     @Override
-    public int getInt(int columnIndex) throws SQLException {
-        return 0;
+    public int getInt(int columnIndex) {
+        try {
+            return Integer.parseInt(current[columnIndex - 1]);
+        } catch (NumberFormatException e) {
+            return getBoolean(columnIndex) ? 1 : 0;
+        }
     }
 
     @Override
@@ -97,7 +101,7 @@ public class RunopsResultSet implements ResultSet {
 
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
-        return new byte[0];
+        return current[columnIndex - 1].getBytes();
     }
 
     @Override
@@ -131,14 +135,15 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public String getString(String columnLabel) throws SQLException {
+    public String getString(String columnLabel) {
         int idx = Arrays.asList(readerIterator.getHeader()).indexOf(columnLabel);
         return getString(idx+1);
     }
 
     @Override
-    public boolean getBoolean(String columnLabel) throws SQLException {
-        return false;
+    public boolean getBoolean(String columnLabel) {
+        int idx = Arrays.asList(readerIterator.getHeader()).indexOf(columnLabel);
+        return getBoolean(idx+1);
     }
 
     @Override
@@ -147,13 +152,15 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public short getShort(String columnLabel) throws SQLException {
-        return 0;
+    public short getShort(String columnLabel) {
+        int idx = Arrays.asList(readerIterator.getHeader()).indexOf(columnLabel);
+        return getShort(idx+1);
     }
 
     @Override
-    public int getInt(String columnLabel) throws SQLException {
-        return 0;
+    public int getInt(String columnLabel) {
+        int idx = Arrays.asList(readerIterator.getHeader()).indexOf(columnLabel);
+        return getInt(idx+1);
     }
 
     @Override
@@ -178,7 +185,8 @@ public class RunopsResultSet implements ResultSet {
 
     @Override
     public byte[] getBytes(String columnLabel) throws SQLException {
-        return new byte[0];
+        int idx = Arrays.asList(readerIterator.getHeader()).indexOf(columnLabel);
+        return getBytes(idx+1);
     }
 
     @Override
@@ -352,8 +360,8 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public int getConcurrency() throws SQLException {
-        return 0;
+    public int getConcurrency() {
+        return ResultSet.CONCUR_READ_ONLY;
     }
 
     @Override
@@ -989,5 +997,10 @@ public class RunopsResultSet implements ResultSet {
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
+    }
+
+    public ResultSet upperCaseFieldLabels() {
+        columns.replaceAll(String::toUpperCase);
+        return this;
     }
 }

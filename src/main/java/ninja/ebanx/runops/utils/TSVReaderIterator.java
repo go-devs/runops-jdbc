@@ -28,7 +28,7 @@ public class TSVReaderIterator implements Iterator<String[]>, Closeable {
                 .build();
         iterator = reader.iterator();
         header = iterator.next();
-        pattern = Pattern.compile("^(\\(\\d+ rows\\))$");
+        pattern = Pattern.compile("^\\(\\d+ rows?\\)$");
     }
 
     @Override

@@ -1,6 +1,7 @@
 package ninja.ebanx.runops;
 
 import ninja.ebanx.runops.api.RunopsApiClient;
+import ninja.ebanx.runops.utils.HandleResult;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -18,6 +19,7 @@ public class RunopsStatement implements Statement {
     private int taskId;
     private int maxRows;
     private volatile boolean isClosed = false;
+    private boolean shouldFixExplainResult = false;
 
     public RunopsStatement(String target, Logger logger) throws SQLException {
         this(RunopsApiClient.create(), target, logger);
@@ -124,6 +126,9 @@ public class RunopsStatement implements Statement {
 
     @Override
     public boolean execute(String sql) throws SQLException {
+        if (sql.toUpperCase().startsWith("EXPLAIN (FORMAT JSON")) {
+            shouldFixExplainResult = true;
+        }
         try {
             executeTask(sql);
             return true;
@@ -142,6 +147,9 @@ public class RunopsStatement implements Statement {
             plainResult = clientApi.getTaskLogsData(taskLog.getString("logs_url"));
         } else {
             plainResult = new StringReader(t.getString("task_logs"));
+        }
+        if (shouldFixExplainResult) {
+            plainResult = HandleResult.tidyQueryPlan(plainResult);
         }
     }
 
