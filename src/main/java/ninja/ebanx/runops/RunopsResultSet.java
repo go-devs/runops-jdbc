@@ -16,6 +16,7 @@ public class RunopsResultSet implements ResultSet {
     private final TSVReaderIterator readerIterator;
     private String[] current;
     private final List<String> columns;
+    private String[] columnTypes;
 
     public RunopsResultSet(Reader data) {
         readerIterator = new TSVReaderIterator(data);
@@ -85,13 +86,13 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public float getFloat(int columnIndex) throws SQLException {
-        return 0;
+    public float getFloat(int columnIndex) {
+        return Float.parseFloat(current[columnIndex - 1]);
     }
 
     @Override
-    public double getDouble(int columnIndex) throws SQLException {
-        return 0;
+    public double getDouble(int columnIndex) {
+        return Double.parseDouble(current[columnIndex - 1]);
     }
 
     @Override
@@ -136,14 +137,12 @@ public class RunopsResultSet implements ResultSet {
 
     @Override
     public String getString(String columnLabel) {
-        int idx = Arrays.asList(readerIterator.getHeader()).indexOf(columnLabel);
-        return getString(idx+1);
+        return getString(columns.indexOf(columnLabel) + 1);
     }
 
     @Override
     public boolean getBoolean(String columnLabel) {
-        int idx = Arrays.asList(readerIterator.getHeader()).indexOf(columnLabel);
-        return getBoolean(idx+1);
+        return getBoolean(columns.indexOf(columnLabel) + 1);
     }
 
     @Override
@@ -153,14 +152,12 @@ public class RunopsResultSet implements ResultSet {
 
     @Override
     public short getShort(String columnLabel) {
-        int idx = Arrays.asList(readerIterator.getHeader()).indexOf(columnLabel);
-        return getShort(idx+1);
+        return getShort(columns.indexOf(columnLabel) + 1);
     }
 
     @Override
     public int getInt(String columnLabel) {
-        int idx = Arrays.asList(readerIterator.getHeader()).indexOf(columnLabel);
-        return getInt(idx+1);
+        return getInt(columns.indexOf(columnLabel) + 1);
     }
 
     @Override
@@ -170,12 +167,12 @@ public class RunopsResultSet implements ResultSet {
 
     @Override
     public float getFloat(String columnLabel) throws SQLException {
-        return 0;
+        return getFloat(columns.indexOf(columnLabel) + 1);
     }
 
     @Override
     public double getDouble(String columnLabel) throws SQLException {
-        return 0;
+        return getDouble(columns.indexOf(columnLabel) + 1);
     }
 
     @Override
@@ -185,8 +182,7 @@ public class RunopsResultSet implements ResultSet {
 
     @Override
     public byte[] getBytes(String columnLabel) throws SQLException {
-        int idx = Arrays.asList(readerIterator.getHeader()).indexOf(columnLabel);
-        return getBytes(idx+1);
+        return getBytes(columns.indexOf(columnLabel) + 1);
     }
 
     @Override
@@ -235,8 +231,8 @@ public class RunopsResultSet implements ResultSet {
     }
 
     @Override
-    public ResultSetMetaData getMetaData() {
-        return new PgResultSetMetaData(readerIterator.getHeader());
+    public ResultSetMetaData getMetaData() throws SQLException {
+        return new PgResultSetMetaData(columns.toArray(new String[0]), this.columnTypes);
     }
 
     @Override
@@ -999,8 +995,13 @@ public class RunopsResultSet implements ResultSet {
         return false;
     }
 
-    public ResultSet upperCaseFieldLabels() {
+    public RunopsResultSet upperCaseFieldLabels() {
         columns.replaceAll(String::toUpperCase);
+        return this;
+    }
+
+    public RunopsResultSet withColumnTypes(String[] columnTypes) {
+        this.columnTypes = columnTypes;
         return this;
     }
 }

@@ -2475,7 +2475,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                     + "    END "
                     + "    ELSE NULL "
                     + "  END AS ASC_OR_DESC, ")
-                    + "    tmp.CARDINALITY, "
+                    + "    tmp.CARDINALITY::double precision, "
                     + "    tmp.PAGES, "
                     + "    tmp.FILTER_CONDITION "
                     + "FROM ("
@@ -2525,7 +2525,9 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
 
         sql += " ORDER BY NON_UNIQUE, TYPE, INDEX_NAME, ORDINAL_POSITION ";
 
-        return ((RunopsResultSet)createMetaDataStatement().executeQuery(sql)).upperCaseFieldLabels();
+        return ((RunopsResultSet)createMetaDataStatement().executeQuery(sql))
+                .withColumnTypes(new String[]{"TEXT", "NAME", "NAME", "BOOL", "TEXT", "NAME", "INT4", "INT4", "TEXT", "TEXT", "FLOAT4", "INT4", "TEXT"})
+                .upperCaseFieldLabels();
     }
 
     // ** JDBC 2 Extensions **
@@ -3029,11 +3031,11 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException(this.getClass() + ".getAttributes(String,String,String,String)");
     }
 
-    public boolean supportsResultSetHoldability(int holdability) throws SQLException {
-        return true;
+    public boolean supportsResultSetHoldability(int holdability) {
+        return holdability == ResultSet.HOLD_CURSORS_OVER_COMMIT;
     }
 
-    public int getResultSetHoldability() throws SQLException {
+    public int getResultSetHoldability() {
         return ResultSet.HOLD_CURSORS_OVER_COMMIT;
     }
 

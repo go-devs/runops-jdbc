@@ -3,6 +3,7 @@ package ninja.ebanx.runops.utils;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
+import com.opencsv.enums.CSVReaderNullFieldIndicator;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -22,7 +23,10 @@ public class TSVReaderIterator implements Iterator<String[]>, Closeable {
     }
 
     public TSVReaderIterator(Reader in) {
-        var csvParser = new CSVParserBuilder().withSeparator('\t').build();
+        var csvParser = new CSVParserBuilder()
+                .withSeparator('\t')
+                .withFieldAsNull(CSVReaderNullFieldIndicator.EMPTY_SEPARATORS)
+                .build();
         reader = new CSVReaderBuilder(in)
                 .withCSVParser(csvParser)
                 .build();
@@ -56,7 +60,7 @@ public class TSVReaderIterator implements Iterator<String[]>, Closeable {
 
     public boolean isValid(String s) {
         if (s == null) {
-            return false;
+            return true;
         }
         Matcher matcher = pattern.matcher(s);
         return !matcher.find();

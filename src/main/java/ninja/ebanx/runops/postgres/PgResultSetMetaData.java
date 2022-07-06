@@ -10,10 +10,10 @@ public class PgResultSetMetaData implements ResultSetMetaData {
 
     private final Field[] fields;
 
-    public PgResultSetMetaData(String[] fields) {
+    public PgResultSetMetaData(String[] fields, String[] types) throws SQLException {
         this.fields = new Field[fields.length];
         for (var i = 0; i < fields.length; i++) {
-            this.fields[i] = new Field(fields[i], Oid.VARCHAR);
+            this.fields[i] = new Field(fields[i], (types != null && types.length > i) ? Oid.valueOf(types[i]) : Oid.VARCHAR);
             this.fields[i].setSQLType(Types.VARCHAR);
         }
     } 
