@@ -26,6 +26,16 @@ public class RunopsApiClient {
         return new RunopsApiClient(cli);
     }
 
+    public String loginUrl(String email) throws IOException {
+        var req = createRequest("GET", "/login?email=" + email);
+        var rsp = execute(req);
+        if (rsp.statusCode() != 200) {
+            throw new IOException(String.format("wrong status code: %d", rsp.statusCode()));
+        }
+        var ret = new JSONObject(rsp.body());
+        return ret.getString("login_url");
+    }
+
     public JSONArray listTargets() throws IOException, InterruptedException {
         var req = createRequest("GET", "/targets");
         var rsp = client.send(req, BodyHandlers.ofString());
