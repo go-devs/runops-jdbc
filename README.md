@@ -2,21 +2,25 @@
 
 ## Install step by step
 
-### 1. Generating or Downloading doJAR file
+### 1. Generating or Downloading JAR file
 
 ### 2. Runops open session
 
-First off all, You have to have installed `node`, You can check it running it `node -v`
+The runops jdbc driver, needs the _authentication bearer_ with a valid _JWT_ in order to make authorized requests to the Runops API.
+You can do this either by passing the JWT through system properties or by file `~/.runops/config`.
+The following code will get a valid JWT and create the needed file to the driver.
 
-`sudo npm install -g runops`
+```shell
+$ java -jar runops-jdbc.jar login "your@email.com"
+```
 
-` runops signup`
-
-I have to fill your corporate Ebanx e-mail like myemail@ebanx.com
-
-A browser session will open, You have to do sign
-
-Back to command terminal and stop the runops process `control+c`
+The output will be something like:
+```shell
+Trying to open your browser now. If it fails, use the link below to continue:
+https://runops.us.auth0.com/authorize?...
+Paylaod received:{"sub":"google-oauth2|...","aud":["...","..."],"https://runops.io/email":"...","azp":"...","scope":"openid profile email","iss":"...","exp":1657244359,"iat":1657157959}
+Expires in:2022-07-07T22:39:19
+```
 
 
 ### 3. IDE Configuration
