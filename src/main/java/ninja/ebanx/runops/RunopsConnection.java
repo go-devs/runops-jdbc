@@ -18,6 +18,7 @@ public class RunopsConnection implements Connection {
     private final ServerVersion version;
     private TypeInfo typeInfo;
     private String catalog;
+    private final String url;
 
     public String getTarget() {
         return target;
@@ -26,7 +27,13 @@ public class RunopsConnection implements Connection {
     public String getConfig() {
         return config;
     }
+
+    public Logger getLogger() {
+        return logger;
+    }
+
     public RunopsConnection(String url, Properties info, Logger logger) {
+        this.url = url;
         URI uri = URI.create(url.substring(5));
         this.target = uri.getHost();
         this.config = info.getProperty("config");
@@ -47,7 +54,7 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public CallableStatement prepareCall(String sql) throws SQLException {
+    public CallableStatement prepareCall(String sql) {
         throw new UnsupportedOperationException("prepareCall not supported");
     }
 
@@ -57,24 +64,18 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public void setAutoCommit(boolean autoCommit) throws SQLException {
-
-    }
+    public void setAutoCommit(boolean autoCommit) {}
 
     @Override
-    public boolean getAutoCommit() throws SQLException {
+    public boolean getAutoCommit() {
         return false;
     }
 
     @Override
-    public void commit() throws SQLException {
-
-    }
+    public void commit() {}
 
     @Override
-    public void rollback() throws SQLException {
-
-    }
+    public void rollback() {}
 
     @Override
     public void close() {
@@ -92,12 +93,10 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public void setReadOnly(boolean readOnly) throws SQLException {
-
-    }
+    public void setReadOnly(boolean readOnly) {}
 
     @Override
-    public boolean isReadOnly() throws SQLException {
+    public boolean isReadOnly() {
         return true;
     }
 
@@ -112,12 +111,10 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public void setTransactionIsolation(int level) throws SQLException {
-
-    }
+    public void setTransactionIsolation(int level) {}
 
     @Override
-    public int getTransactionIsolation() throws SQLException {
+    public int getTransactionIsolation() {
         return Connection.TRANSACTION_NONE;
     }
 
@@ -150,24 +147,22 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-        throw new UnsupportedOperationException("prepareCall not supported");
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) {
+        throw new UnsupportedOperationException("prepareCall not supported yet");
     }
 
     @Override
-    public Map<String, Class<?>> getTypeMap() throws SQLException {
+    public Map<String, Class<?>> getTypeMap() {
         throw new UnsupportedOperationException("getTypeMap not supported");
     }
 
     @Override
-    public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-
+    public void setTypeMap(Map<String, Class<?>> map) {
+        throw new UnsupportedOperationException("setTypeMap not supported");
     }
 
     @Override
-    public void setHoldability(int holdability) throws SQLException {
-
-    }
+    public void setHoldability(int holdability) {}
 
     @Override
     public int getHoldability() {
@@ -176,22 +171,20 @@ public class RunopsConnection implements Connection {
 
     @Override
     public Savepoint setSavepoint() throws SQLException {
-        throw new UnsupportedOperationException("setSavepoint not supported");
+        throw new SQLFeatureNotSupportedException("setSavepoint not supported");
     }
 
     @Override
     public Savepoint setSavepoint(String name) throws SQLException {
-        throw new UnsupportedOperationException("setSavepoint not supported");
+        throw new SQLFeatureNotSupportedException("setSavepoint(string) not supported");
     }
 
     @Override
-    public void rollback(Savepoint savepoint) throws SQLException {
-
-    }
+    public void rollback(Savepoint savepoint) {}
 
     @Override
     public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException("releaseSavepoint not supported");
     }
 
     @Override
@@ -207,7 +200,7 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {
         throw new UnsupportedOperationException("prepareCall not supported");
     }
 
@@ -227,27 +220,27 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public Clob createClob() throws SQLException {
+    public Clob createClob() {
         throw new UnsupportedOperationException("createClob not supported");
     }
 
     @Override
-    public Blob createBlob() throws SQLException {
+    public Blob createBlob() {
         throw new UnsupportedOperationException("createBlob not supported");
     }
 
     @Override
-    public NClob createNClob() throws SQLException {
+    public NClob createNClob() {
         throw new UnsupportedOperationException("createNClob not supported");
     }
 
     @Override
-    public SQLXML createSQLXML() throws SQLException {
+    public SQLXML createSQLXML() {
         throw new UnsupportedOperationException("createSQLXML not supported");
     }
 
     @Override
-    public boolean isValid(int timeout) throws SQLException {
+    public boolean isValid(int timeout) {
         return true;
     }
 
@@ -272,23 +265,21 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+    public Array createArrayOf(String typeName, Object[] elements) {
         throw new UnsupportedOperationException("createArrayOf not supported");
     }
 
     @Override
-    public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+    public Struct createStruct(String typeName, Object[] attributes) {
         throw new UnsupportedOperationException("createStruct not supported");
     }
 
     @Override
-    public void setSchema(String schema) throws SQLException {
-
-    }
+    public void setSchema(String schema) {}
 
     @Override
-    public String getSchema() throws SQLException {
-        throw new UnsupportedOperationException("getSchema not supported");
+    public String getSchema() {
+        return null;
     }
 
     @Override
@@ -297,27 +288,25 @@ public class RunopsConnection implements Connection {
     }
 
     @Override
-    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-
-    }
+    public void setNetworkTimeout(Executor executor, int milliseconds) {}
 
     @Override
-    public int getNetworkTimeout() throws SQLException {
+    public int getNetworkTimeout() {
         return 0;
     }
 
     @Override
-    public <T> T unwrap(Class<T> iface) throws SQLException {
+    public <T> T unwrap(Class<T> iface) {
         throw new UnsupportedOperationException("unwrap not supported");
     }
 
     @Override
-    public boolean isWrapperFor(Class<?> iface) throws SQLException {
+    public boolean isWrapperFor(Class<?> iface) {
         return false;
     }
 
     public String getURL() {
-        return "";
+        return url;
     }
 
     public String getUserName() {
