@@ -370,7 +370,7 @@ public class TypeInfo {
         if (isArray) {
             if (getOidStatementComplexArray == null) {
                 String sql;
-                if (conn.haveMinimumServerVersion(ServerVersion.v8_3)) {
+                if (((PgTarget)conn.getTargetConnection()).haveMinimumServerVersion(ServerVersion.v8_3)) {
                     sql = "SELECT t.typarray, arr.typname "
                             + "  FROM pg_catalog.pg_type t"
                             + "  JOIN pg_catalog.pg_namespace n ON t.typnamespace = n.oid"

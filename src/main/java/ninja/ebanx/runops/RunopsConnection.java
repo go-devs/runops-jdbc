@@ -1,10 +1,7 @@
 package ninja.ebanx.runops;
 
-import ninja.ebanx.runops.postgres.PgDatabaseMetaData;
-import ninja.ebanx.runops.postgres.ServerVersion;
-import ninja.ebanx.runops.postgres.TypeInfo;
+import org.json.JSONObject;
 
-import java.net.URI;
 import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
@@ -12,17 +9,10 @@ import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
 public class RunopsConnection implements Connection {
-    private final String target;
     private final String config;
     private final Logger logger;
-    private final ServerVersion version;
-    private TypeInfo typeInfo;
     private String catalog;
-    private final String url;
-
-    public String getTarget() {
-        return target;
-    }
+    private final TargetConnection targetConnection;
 
     public String getConfig() {
         return config;
@@ -32,25 +22,25 @@ public class RunopsConnection implements Connection {
         return logger;
     }
 
-    public RunopsConnection(String url, Properties info, Logger logger) {
-        this.url = url;
-        URI uri = URI.create(url.substring(5));
-        this.target = uri.getHost();
+    public TargetConnection getTargetConnection() {
+        return targetConnection;
+    }
+
+    public RunopsConnection(JSONObject target, Properties info, Logger logger) throws SQLException {
+        this.targetConnection = TargetConnection.of(target, this);
         this.config = info.getProperty("config");
         this.logger = logger;
         logger.info("connection created");
-        // TODO get current version
-        version = ServerVersion.v10;
     }
 
     @Override
     public Statement createStatement() throws SQLException {
-        return new RunopsStatement(target, logger);
+        return new RunopsStatement(getTargetConnection().getName(), logger);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        return new RunopsPreparedStatement(sql, target, logger);
+        return new RunopsPreparedStatement(sql, getTargetConnection().getName(), logger);
     }
 
     @Override
@@ -89,7 +79,7 @@ public class RunopsConnection implements Connection {
 
     @Override
     public DatabaseMetaData getMetaData() {
-        return new PgDatabaseMetaData(this);
+        return getTargetConnection().getMetaData();
     }
 
     @Override
@@ -303,28 +293,5 @@ public class RunopsConnection implements Connection {
     @Override
     public boolean isWrapperFor(Class<?> iface) {
         return false;
-    }
-
-    public String getURL() {
-        return url;
-    }
-
-    public String getUserName() {
-        return "";
-    }
-
-    public boolean haveMinimumServerVersion(ServerVersion ver) {
-        return version.getVersionNum() >= ver.getVersionNum();
-    }
-
-    public boolean getHideUnprivilegedObjects() {
-        return false;
-    }
-
-    public TypeInfo getTypeInfo() {
-        if (typeInfo == null) {
-            typeInfo = new TypeInfo(this, Integer.MAX_VALUE);
-        }
-        return typeInfo;
     }
 }

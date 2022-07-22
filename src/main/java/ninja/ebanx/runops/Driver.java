@@ -1,5 +1,10 @@
 package ninja.ebanx.runops;
 
+import ninja.ebanx.runops.api.RunopsApiClient;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.net.URI;
 import java.sql.*;
 import java.util.Objects;
 import java.util.Properties;
@@ -21,9 +26,16 @@ public class Driver implements java.sql.Driver {
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
         if (!this.acceptsURL(url)) {
-            throw new SQLException("invalid url");
+            return null;
         }
-        return new RunopsConnection(url, info, this.getParentLogger());
+        try {
+            URI uri = URI.create(url.substring(5));
+            RunopsApiClient apiClient = RunopsApiClient.create();
+            JSONObject target = apiClient.getTarget(uri.getHost());
+            return new RunopsConnection(target, info, this.getParentLogger());
+        } catch (IOException e) {
+            throw new SQLException("Unauthorized or target invalid", e);
+        }
     }
 
     @Override

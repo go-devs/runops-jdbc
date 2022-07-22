@@ -1,5 +1,6 @@
 package ninja.ebanx.runops;
 
+import ninja.ebanx.runops.api.MockedHttpClientBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -10,7 +11,8 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class DriverTest {
 
@@ -39,8 +41,9 @@ class DriverTest {
     }
 
     @Test
-    void connect() throws SQLException {
+    void connect() throws SQLException, IOException, InterruptedException {
         // Arrange
+        new MockedHttpClientBuilder().withTarget("target-name", "postgres").build();
         // Act
         var conn = DriverManager.getConnection(CONNECTION_STRING);
         // Assert

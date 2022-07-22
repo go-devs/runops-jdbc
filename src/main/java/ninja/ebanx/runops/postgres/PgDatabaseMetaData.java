@@ -27,8 +27,11 @@ import static ninja.ebanx.runops.utils.Nullness.castNonNull;
 
 public class PgDatabaseMetaData implements DatabaseMetaData {
 
+    private final PgTarget pgTarget;
+
     public PgDatabaseMetaData(RunopsConnection conn) {
         this.connection = conn;
+        this.pgTarget = (PgTarget)conn.getTargetConnection();
     }
 
     private String keywords;
@@ -92,11 +95,11 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
     }
 
     public String getURL() {
-        return connection.getURL();
+        return pgTarget.getURL();
     }
 
     public String getUserName() {
-        return connection.getUserName();
+        return pgTarget.getUserName();
     }
 
     public boolean isReadOnly() {
@@ -131,7 +134,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public String getDatabaseProductVersion() throws SQLException {
+    public String getDatabaseProductVersion() {
         // TODO improve
         return "10.13";
     }
@@ -961,7 +964,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                 + " LEFT JOIN pg_catalog.pg_namespace pn ON (c.relnamespace=pn.oid AND pn.nspname='pg_catalog') "
                 + " WHERE p.pronamespace=n.oid ";
 
-        if (connection.haveMinimumServerVersion(ServerVersion.v11)) {
+        if (pgTarget.haveMinimumServerVersion(ServerVersion.v11)) {
             sql += " AND p.prokind='p'";
         }
         if (schemaPattern != null && !schemaPattern.isEmpty()) {
@@ -970,7 +973,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         if (procedureNamePattern != null && !procedureNamePattern.isEmpty()) {
             sql += " AND p.proname LIKE " + escapeQuotes(procedureNamePattern);
         }
-        if (connection.getHideUnprivilegedObjects()) {
+        if (pgTarget.getHideUnprivilegedObjects()) {
             sql += " AND has_function_privilege(p.oid,'EXECUTE')";
         }
         sql += " ORDER BY PROCEDURE_SCHEM, PROCEDURE_NAME, p.oid::text ";
@@ -1070,8 +1073,8 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                 tuple[2] = procedureName;
                 tuple[3] = Utils.encodeString("returnValue");
                 tuple[4] = Utils.encodeString(Integer.toString(java.sql.DatabaseMetaData.procedureColumnReturn));
-                tuple[5] = Utils.encodeString(Integer.toString(connection.getTypeInfo().getSQLType(returnType)));
-                tuple[6] = Utils.encodeString(Objects.requireNonNull(connection.getTypeInfo().getPGType(returnType)));
+                tuple[5] = Utils.encodeString(Integer.toString(pgTarget.getTypeInfo().getSQLType(returnType)));
+                tuple[6] = Utils.encodeString(Objects.requireNonNull(pgTarget.getTypeInfo().getPGType(returnType)));
                 tuple[7] = null;
                 tuple[8] = null;
                 tuple[9] = null;
@@ -1118,8 +1121,8 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
 
                 tuple[5] =
                         Utils.encodeString(Integer.toString(
-                                castNonNull(connection.getTypeInfo().getSQLType(argOid))));
-                tuple[6] = Utils.encodeString(Objects.requireNonNull(connection.getTypeInfo().getPGType(argOid)));
+                                castNonNull(pgTarget.getTypeInfo().getSQLType(argOid))));
+                tuple[6] = Utils.encodeString(Objects.requireNonNull(pgTarget.getTypeInfo().getPGType(argOid)));
                 tuple[7] = null;
                 tuple[8] = null;
                 tuple[9] = null;
@@ -1149,8 +1152,8 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                     tuple[2] = procedureName;
                     tuple[3] = columnrs.getBytes("attname");
                     tuple[4] = Utils.encodeString(Integer.toString(java.sql.DatabaseMetaData.procedureColumnResult));
-                    tuple[5] = Utils.encodeString(Integer.toString(connection.getTypeInfo().getSQLType(columnTypeOid)));
-                    tuple[6] = Utils.encodeString(Objects.requireNonNull(connection.getTypeInfo().getPGType(columnTypeOid)));
+                    tuple[5] = Utils.encodeString(Integer.toString(pgTarget.getTypeInfo().getSQLType(columnTypeOid)));
+                    tuple[6] = Utils.encodeString(Objects.requireNonNull(pgTarget.getTypeInfo().getPGType(columnTypeOid)));
                     tuple[7] = null;
                     tuple[8] = null;
                     tuple[9] = null;
@@ -1225,7 +1228,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         if (schemaPattern != null && !schemaPattern.isEmpty()) {
             select += " AND n.nspname LIKE " + escapeQuotes(schemaPattern);
         }
-        if (connection.getHideUnprivilegedObjects()) {
+        if (pgTarget.getHideUnprivilegedObjects()) {
             select += " AND has_table_privilege(c.oid, "
                     + " 'SELECT, INSERT, UPDATE, DELETE, RULE, REFERENCES, TRIGGER')";
         }
@@ -1353,7 +1356,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         if (schemaPattern != null && !schemaPattern.isEmpty()) {
             sql += " AND nspname LIKE " + escapeQuotes(schemaPattern);
         }
-        if (connection.getHideUnprivilegedObjects()) {
+        if (pgTarget.getHideUnprivilegedObjects()) {
             sql += " AND has_schema_privilege(nspname, 'USAGE, CREATE')";
         }
         sql += " ORDER BY TABLE_SCHEM";
@@ -1462,7 +1465,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         // function as possible (schema/table names), but must leave
         // column name outside so we correctly count the other columns.
         //
-        if (connection.haveMinimumServerVersion(ServerVersion.v8_4)) {
+        if (pgTarget.haveMinimumServerVersion(ServerVersion.v8_4)) {
             sql = "SELECT * FROM (";
         } else {
             sql = "";
@@ -1471,19 +1474,19 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         sql += "SELECT n.nspname,c.relname,a.attname,a.atttypid,a.attnotnull "
                 + "OR (t.typtype = 'd' AND t.typnotnull) AS attnotnull,a.atttypmod,a.attlen,t.typtypmod,";
 
-        if (connection.haveMinimumServerVersion(ServerVersion.v8_4)) {
+        if (pgTarget.haveMinimumServerVersion(ServerVersion.v8_4)) {
             sql += "row_number() OVER (PARTITION BY a.attrelid ORDER BY a.attnum) AS attnum, ";
         } else {
             sql += "a.attnum,";
         }
 
-        if (connection.haveMinimumServerVersion(ServerVersion.v10)) {
+        if (pgTarget.haveMinimumServerVersion(ServerVersion.v10)) {
             sql += "nullif(a.attidentity, '') as attidentity,";
         } else {
             sql += "null as attidentity,";
         }
 
-        if (connection.haveMinimumServerVersion(ServerVersion.v12)) {
+        if (pgTarget.haveMinimumServerVersion(ServerVersion.v12)) {
             sql += "nullif(a.attgenerated, '') as attgenerated,";
         } else {
             sql += "null as attgenerated,";
@@ -1506,7 +1509,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         if (tableNamePattern != null && !tableNamePattern.isEmpty()) {
             sql += " AND c.relname LIKE " + escapeQuotes(tableNamePattern);
         }
-        if (connection.haveMinimumServerVersion(ServerVersion.v8_4)) {
+        if (pgTarget.haveMinimumServerVersion(ServerVersion.v8_4)) {
             sql += ") c WHERE true ";
         }
         if (columnNamePattern != null && !columnNamePattern.isEmpty()) {
@@ -1535,11 +1538,11 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
             } else if ("e".equals(typtype)) {
                 sqlType = Types.VARCHAR;
             } else {
-                sqlType = connection.getTypeInfo().getSQLType(typeOid);
+                sqlType = pgTarget.getTypeInfo().getSQLType(typeOid);
             }
 
             tuple[4] = Utils.encodeString(Integer.toString(sqlType));
-            String pgType = connection.getTypeInfo().getPGType(typeOid);
+            String pgType = pgTarget.getTypeInfo().getPGType(typeOid);
             assert pgType != null;
             tuple[5] = Utils.encodeString(pgType); // Type name
             tuple[7] = null; // Buffer length
@@ -1551,7 +1554,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                     tuple[5] = Utils.encodeString("serial"); // Type name == serial
                 } else if ("int8".equals(pgType)) {
                     tuple[5] = Utils.encodeString("bigserial"); // Type name == bigserial
-                } else if ("int2".equals(pgType) && connection.haveMinimumServerVersion(ServerVersion.v9_2)) {
+                } else if ("int2".equals(pgType) && pgTarget.haveMinimumServerVersion(ServerVersion.v9_2)) {
                     tuple[5] = Utils.encodeString("smallserial"); // Type name == smallserial
                 }
             }
@@ -1570,7 +1573,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         From the docs if typtypmod is -1
          */
                 int typtypmod = rs.getInt("typtypmod");
-                decimalDigits = connection.getTypeInfo().getScale(baseTypeOid, typeMod);
+                decimalDigits = pgTarget.getTypeInfo().getScale(baseTypeOid, typeMod);
         /*
         From the postgres docs:
         Domains use typtypmod to record the typmod to be applied to their
@@ -1579,18 +1582,18 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         a domain, but for actual types this will return the correct value.
          */
                 if ( typtypmod == -1 ) {
-                    columnSize = connection.getTypeInfo().getPrecision(baseTypeOid, typeMod);
+                    columnSize = pgTarget.getTypeInfo().getPrecision(baseTypeOid, typeMod);
                 } else if (baseTypeOid == Oid.NUMERIC ) {
-                    decimalDigits = connection.getTypeInfo().getScale(baseTypeOid, typtypmod);
-                    columnSize = connection.getTypeInfo().getPrecision(baseTypeOid, typtypmod);
+                    decimalDigits = pgTarget.getTypeInfo().getScale(baseTypeOid, typtypmod);
+                    columnSize = pgTarget.getTypeInfo().getPrecision(baseTypeOid, typtypmod);
                 } else {
                     columnSize = typtypmod;
                 }
             } else {
-                decimalDigits = connection.getTypeInfo().getScale(typeOid, typeMod);
-                columnSize = connection.getTypeInfo().getPrecision(typeOid, typeMod);
+                decimalDigits = pgTarget.getTypeInfo().getScale(typeOid, typeMod);
+                columnSize = pgTarget.getTypeInfo().getPrecision(typeOid, typeMod);
                 if ( sqlType != Types.NUMERIC && columnSize == 0 ) {
-                    columnSize = connection.getTypeInfo().getDisplaySize(typeOid, typeMod);
+                    columnSize = pgTarget.getTypeInfo().getDisplaySize(typeOid, typeMod);
                 }
             }
             tuple[6] = Utils.encodeString(Integer.toString(columnSize));
@@ -1624,7 +1627,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
             tuple[20] = null; // SCOPE_TABLE
             tuple[21] = baseTypeOid == 0 // SOURCE_DATA_TYPE
                     ? null
-                    : Utils.encodeString(Integer.toString(connection.getTypeInfo().getSQLType(baseTypeOid)));
+                    : Utils.encodeString(Integer.toString(pgTarget.getTypeInfo().getSQLType(baseTypeOid)));
 
             String autoinc = "NO";
             if (defval != null && defval.contains("nextval(") || identity != null) {
@@ -1663,7 +1666,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
 
         String sql;
         sql = "SELECT n.nspname,c.relname,r.rolname,c.relacl, "
-                + (connection.haveMinimumServerVersion(ServerVersion.v8_4) ? "a.attacl, " : "")
+                + (pgTarget.haveMinimumServerVersion(ServerVersion.v8_4) ? "a.attacl, " : "")
                 + " a.attname "
                 + " FROM pg_catalog.pg_namespace n, pg_catalog.pg_class c, "
                 + " pg_catalog.pg_roles r, pg_catalog.pg_attribute a "
@@ -1696,7 +1699,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
             // For instance: SELECT -> user1 -> list of [grantor, grantable]
             Map<String, Map<String, List<@Nullable String[]>>> permissions = parseACL(relAcl, owner);
 
-            if (connection.haveMinimumServerVersion(ServerVersion.v8_4)) {
+            if (pgTarget.haveMinimumServerVersion(ServerVersion.v8_4)) {
                 String acl = rs.getString("attacl");
                 Map<String, Map<String, List<@Nullable String[]>>> relPermissions = parseACL(acl, owner);
                 permissions.putAll(relPermissions);
@@ -1929,7 +1932,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         if (aclArray == null) {
             // arwdxt -- 8.2 Removed the separate RULE permission
             // arwdDxt -- 8.4 Added a separate TRUNCATE permission
-            String perms = connection.haveMinimumServerVersion(ServerVersion.v8_4) ? "arwdDxt" : "arwdxt";
+            String perms = pgTarget.haveMinimumServerVersion(ServerVersion.v8_4) ? "arwdDxt" : "arwdxt";
 
             aclArray = "{" + owner + "=" + perms + "/" + owner + "}";
         }
@@ -1987,18 +1990,18 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         while (rs.next()) {
             byte[] @Nullable [] tuple = new byte[8][];
             int typeOid = (int) rs.getLong("atttypid");
-            int sqlType = connection.getTypeInfo().getSQLType(typeOid);
+            int sqlType = pgTarget.getTypeInfo().getSQLType(typeOid);
             int typeMod = rs.getInt("atttypmod");
-            int decimalDigits = connection.getTypeInfo().getScale(typeOid, typeMod);
-            int columnSize = connection.getTypeInfo().getPrecision(typeOid, typeMod);
+            int decimalDigits = pgTarget.getTypeInfo().getScale(typeOid, typeMod);
+            int columnSize = pgTarget.getTypeInfo().getPrecision(typeOid, typeMod);
             if ( sqlType != Types.NUMERIC && columnSize == 0) {
-                columnSize = connection.getTypeInfo().getDisplaySize(typeOid, typeMod);
+                columnSize = pgTarget.getTypeInfo().getDisplaySize(typeOid, typeMod);
             }
             tuple[0] = Utils.encodeString(Integer.toString(scope));
             tuple[1] = rs.getBytes("attname");
             tuple[2] =
                     Utils.encodeString(Integer.toString(sqlType));
-            tuple[3] = Utils.encodeString(Objects.requireNonNull(connection.getTypeInfo().getPGType(typeOid)));
+            tuple[3] = Utils.encodeString(Objects.requireNonNull(pgTarget.getTypeInfo().getPGType(typeOid)));
             tuple[4] = Utils.encodeString(Integer.toString(columnSize));
             tuple[5] = null; // unused
             tuple[6] = Utils.encodeString(Integer.toString(decimalDigits));
@@ -2040,7 +2043,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         tuple[0] = null;
         tuple[1] = Utils.encodeString("ctid");
         tuple[2] =
-                Utils.encodeString(Integer.toString(connection.getTypeInfo().getSQLType("tid")));
+                Utils.encodeString(Integer.toString(pgTarget.getTypeInfo().getSQLType("tid")));
         tuple[3] = Utils.encodeString("tid");
         tuple[4] = null;
         tuple[5] = null;
@@ -2156,7 +2159,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         // Starting in Postgres 9.0, pg_constraint was augmented with the conindid column, which
         // contains the oid of the index supporting the constraint. This makes it unnecessary to do a
         // further join on pg_depend.
-        if (!connection.haveMinimumServerVersion(ServerVersion.v9_0)) {
+        if (!pgTarget.haveMinimumServerVersion(ServerVersion.v9_0)) {
             sql += ", pg_catalog.pg_depend dep ";
         }
         sql +=
@@ -2169,13 +2172,13 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
     for clarity
     */
 
-        if (!connection.haveMinimumServerVersion(ServerVersion.v11)) {
+        if (!pgTarget.haveMinimumServerVersion(ServerVersion.v11)) {
             sql += "AND pkic.relkind = 'i' ";
         } else {
             sql += "AND (pkic.relkind = 'i' OR pkic.relkind = 'I')";
         }
 
-        if (!connection.haveMinimumServerVersion(ServerVersion.v9_0)) {
+        if (!pgTarget.haveMinimumServerVersion(ServerVersion.v9_0)) {
             sql += " AND con.oid = dep.objid AND pkic.oid = dep.refobjid AND dep.classid = 'pg_constraint'::regclass::oid AND dep.refclassid = 'pg_class'::regclass::oid ";
         } else {
             sql += " AND pkic.oid = con.conindid ";
@@ -2252,7 +2255,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                 + " AND "
                 + " (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))";
 
-        if (connection.getHideUnprivilegedObjects() && connection.haveMinimumServerVersion(ServerVersion.v9_2)) {
+        if (pgTarget.getHideUnprivilegedObjects() && pgTarget.haveMinimumServerVersion(ServerVersion.v9_2)) {
             sql += " AND has_type_privilege(t.oid, 'USAGE')";
         }
 
@@ -2270,7 +2273,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         byte[] bSearchable =
                 Utils.encodeString(Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
 
-        TypeInfo ti = connection.getTypeInfo();
+        TypeInfo ti = pgTarget.getTypeInfo();
         ti.cacheSQLTypes();
 
         while (rs.next()) {
@@ -2279,27 +2282,27 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
             int typeOid = (int) rs.getLong(2);
 
             tuple[0] = Utils.encodeString(typname);
-            int sqlType = connection.getTypeInfo().getSQLType(typname);
+            int sqlType = pgTarget.getTypeInfo().getSQLType(typname);
             tuple[1] =
                     Utils.encodeString(Integer.toString(sqlType));
 
             /* this is just for sorting below, the result set never sees this */
             tuple[18] = BigInteger.valueOf(sqlType).toByteArray();
 
-            tuple[2] = Utils.encodeString(Integer.toString(connection.getTypeInfo().getMaximumPrecision(typeOid)));
+            tuple[2] = Utils.encodeString(Integer.toString(pgTarget.getTypeInfo().getMaximumPrecision(typeOid)));
 
             // Using requiresQuoting(oid) would might trigger select statements that might fail with NPE
             // if oid in question is being dropped.
             // requiresQuotingSqlType is not bulletproof, however, it solves the most visible NPE.
-            if (connection.getTypeInfo().requiresQuotingSqlType(sqlType)) {
+            if (pgTarget.getTypeInfo().requiresQuotingSqlType(sqlType)) {
                 tuple[3] = bliteral;
                 tuple[4] = bliteral;
             }
 
             tuple[6] = bNullable; // all types can be null
-            tuple[7] = connection.getTypeInfo().isCaseSensitive(typeOid) ? bt : bf;
+            tuple[7] = pgTarget.getTypeInfo().isCaseSensitive(typeOid) ? bt : bf;
             tuple[8] = bSearchable; // any thing can be used in the WHERE clause
-            tuple[9] = connection.getTypeInfo().isSigned(typeOid) ? bf : bt;
+            tuple[9] = pgTarget.getTypeInfo().isSigned(typeOid) ? bf : bt;
             tuple[10] = bf; // false for now - must handle money
             tuple[11] = bf; // false - it isn't autoincrement
             tuple[13] = bZero; // min scale is zero
@@ -2324,7 +2327,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                 tuple1[0] = Utils.encodeString("bigserial");
                 tuple1[11] = bt;
                 v.add(new Tuple(tuple1));
-            } else if ("int2".equals(typname) && connection.haveMinimumServerVersion(ServerVersion.v9_2)) {
+            } else if ("int2".equals(typname) && pgTarget.haveMinimumServerVersion(ServerVersion.v9_2)) {
                 byte[] @Nullable [] tuple1 = tuple.clone();
 
                 tuple1[0] = Utils.encodeString("smallserial");
@@ -2357,7 +2360,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
          * data to get the column the function operates on.
          */
         String sql;
-        if (connection.haveMinimumServerVersion(ServerVersion.v8_3)) {
+        if (pgTarget.haveMinimumServerVersion(ServerVersion.v8_3)) {
             sql = "SELECT NULL AS TABLE_CAT, n.nspname AS TABLE_SCHEM, "
                     + "  ct.relname AS TABLE_NAME, NOT i.indisunique AS NON_UNIQUE, "
                     + "  NULL AS INDEX_QUALIFIER, ci.relname AS INDEX_NAME, "
@@ -2374,7 +2377,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                     + "  pg_catalog.pg_get_expr(i.indpred, i.indrelid) AS FILTER_CONDITION, "
                     + "  ci.oid AS CI_OID, "
                     + "  i.indoption AS I_INDOPTION, "
-                    + (connection.haveMinimumServerVersion(ServerVersion.v9_6) ? "  am.amname AS AM_NAME " : "  am.amcanorder AS AM_CANORDER ")
+                    + (pgTarget.haveMinimumServerVersion(ServerVersion.v9_6) ? "  am.amname AS AM_NAME " : "  am.amcanorder AS AM_CANORDER ")
                     + "FROM pg_catalog.pg_class ct "
                     + "  JOIN pg_catalog.pg_namespace n ON (ct.relnamespace = n.oid) "
                     + "  JOIN pg_catalog.pg_index i ON (ct.oid = i.indrelid) "
@@ -2402,7 +2405,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                     + "    tmp.TYPE, "
                     + "    tmp.ORDINAL_POSITION, "
                     + "    trim(both '\"' from pg_catalog.pg_get_indexdef(tmp.CI_OID, tmp.ORDINAL_POSITION, false)) AS COLUMN_NAME, "
-                    + (connection.haveMinimumServerVersion(ServerVersion.v9_6)
+                    + (pgTarget.haveMinimumServerVersion(ServerVersion.v9_6)
                     ? "  CASE tmp.AM_NAME "
                     + "    WHEN 'btree' THEN CASE tmp.I_INDOPTION[tmp.ORDINAL_POSITION - 1] & 1::smallint "
                     + "      WHEN 1 THEN 'D' "
@@ -2532,7 +2535,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                 + java.sql.Types.DISTINCT
                 + " end as data_type, pg_catalog.obj_description(t.oid, 'pg_type')  "
                 + "as remarks, CASE WHEN t.typtype = 'd' then (select ";
-        TypeInfo typeInfo = connection.getTypeInfo();
+        TypeInfo typeInfo = pgTarget.getTypeInfo();
 
         StringBuilder sqlWhen = new StringBuilder();
         for (Iterator<Integer> i = typeInfo.getPGTypeOidsWithSQLTypes(); i.hasNext(); ) {
@@ -2591,8 +2594,8 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         }
         sql += toAdd.toString();
 
-        if (connection.getHideUnprivilegedObjects()
-                && connection.haveMinimumServerVersion(ServerVersion.v9_2)) {
+        if (pgTarget.getHideUnprivilegedObjects()
+                && pgTarget.haveMinimumServerVersion(ServerVersion.v9_2)) {
             sql += " AND has_type_privilege(t.oid, 'USAGE')";
         }
 
@@ -2643,7 +2646,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
 
         List<Tuple> v = new ArrayList<>();
 
-        if (connection.haveMinimumServerVersion(ServerVersion.v9_0)) {
+        if (pgTarget.haveMinimumServerVersion(ServerVersion.v9_0)) {
             byte[] @Nullable [] tuple = new byte[4][];
             tuple[0] = Utils.encodeString("ApplicationName");
             tuple[1] = Utils.encodeString(Integer.toString(getMaxNameLength()));
@@ -2671,7 +2674,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
             throws SQLException {
 
         // The pg_get_function_result only exists 8.4 or later
-        boolean pgFuncResultExists = connection.haveMinimumServerVersion(ServerVersion.v8_4);
+        boolean pgFuncResultExists = pgTarget.haveMinimumServerVersion(ServerVersion.v8_4);
 
         // Use query that support pg_get_function_result to get function result, else unknown is defaulted
         String funcTypeSql = DatabaseMetaData.functionResultUnknown + " ";
@@ -2696,7 +2699,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                 + "LEFT JOIN pg_catalog.pg_description d ON p.oid=d.objoid "
                 + "WHERE true  ";
 
-        if (connection.haveMinimumServerVersion(ServerVersion.v11)) {
+        if (pgTarget.haveMinimumServerVersion(ServerVersion.v11)) {
             sql += " AND p.prokind='f'";
         }
     /*
@@ -2708,7 +2711,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         if (functionNamePattern != null && !functionNamePattern.isEmpty()) {
             sql += " AND p.proname LIKE " + escapeQuotes(functionNamePattern);
         }
-        if (connection.getHideUnprivilegedObjects()) {
+        if (pgTarget.getHideUnprivilegedObjects()) {
             sql += " AND has_function_privilege(p.oid,'EXECUTE')";
         }
         sql += " ORDER BY FUNCTION_SCHEM, FUNCTION_NAME, p.oid::text ";
@@ -2805,8 +2808,8 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                 tuple[2] = functionName;
                 tuple[3] = Utils.encodeString("returnValue");
                 tuple[4] = Utils.encodeString(Integer.toString(java.sql.DatabaseMetaData.functionReturn));
-                tuple[5] = Utils.encodeString(Integer.toString(connection.getTypeInfo().getSQLType(returnType)));
-                tuple[6] = Utils.encodeString(Objects.requireNonNull(connection.getTypeInfo().getPGType(returnType)));
+                tuple[5] = Utils.encodeString(Integer.toString(pgTarget.getTypeInfo().getSQLType(returnType)));
+                tuple[6] = Utils.encodeString(Objects.requireNonNull(pgTarget.getTypeInfo().getPGType(returnType)));
                 tuple[7] = null;
                 tuple[8] = null;
                 tuple[9] = null;
@@ -2852,8 +2855,8 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                 }
 
                 tuple[5] =
-                        Utils.encodeString(Integer.toString(connection.getTypeInfo().getSQLType(argOid)));
-                tuple[6] = Utils.encodeString(Objects.requireNonNull(connection.getTypeInfo().getPGType(argOid)));
+                        Utils.encodeString(Integer.toString(pgTarget.getTypeInfo().getSQLType(argOid)));
+                tuple[6] = Utils.encodeString(Objects.requireNonNull(pgTarget.getTypeInfo().getPGType(argOid)));
                 tuple[7] = null;
                 tuple[8] = null;
                 tuple[9] = null;
@@ -2883,8 +2886,8 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
                     tuple[2] = functionName;
                     tuple[3] = columnrs.getBytes("attname");
                     tuple[4] = Utils.encodeString(Integer.toString(java.sql.DatabaseMetaData.functionColumnResult));
-                    tuple[5] = Utils.encodeString(Integer.toString(connection.getTypeInfo().getSQLType(columnTypeOid)));
-                    tuple[6] = Utils.encodeString(Objects.requireNonNull(connection.getTypeInfo().getPGType(columnTypeOid)));
+                    tuple[5] = Utils.encodeString(Integer.toString(pgTarget.getTypeInfo().getSQLType(columnTypeOid)));
+                    tuple[6] = Utils.encodeString(Objects.requireNonNull(pgTarget.getTypeInfo().getPGType(columnTypeOid)));
                     tuple[7] = null;
                     tuple[8] = null;
                     tuple[9] = null;

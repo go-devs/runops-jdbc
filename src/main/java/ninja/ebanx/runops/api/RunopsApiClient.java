@@ -12,8 +12,10 @@ import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.function.Supplier;
 
 public class RunopsApiClient {
+    public static Supplier<HttpClient> DEFAULT_CLIENT = HttpClient::newHttpClient;
     private static final String BASE_URI = "https://api.runops.io/v1";
     private final HttpClient client;
 
@@ -22,7 +24,7 @@ public class RunopsApiClient {
     }
 
     public static RunopsApiClient create() {
-        var cli = HttpClient.newHttpClient();
+        HttpClient cli = DEFAULT_CLIENT.get();
         return new RunopsApiClient(cli);
     }
 
