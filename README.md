@@ -11,7 +11,13 @@ You can do this either by passing the JWT through system properties or by file `
 The following code will get a valid JWT and create the needed file to the driver.
 
 ```shell
-$ java -jar runops-jdbc.jar login "your@email.com"
+cp .env.dev .env
+```
+Set your email
+```shell
+EMAIL=myemail@ebanx.com
+```
+./runops_login.sh
 ```
 
 The output will be something like:
