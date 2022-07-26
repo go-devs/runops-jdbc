@@ -35,12 +35,12 @@ public class RunopsConnection implements Connection {
 
     @Override
     public Statement createStatement() throws SQLException {
-        return new RunopsStatement(getTargetConnection().getName(), logger);
+        return new RunopsStatement(getTargetConnection(), logger);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        return new RunopsPreparedStatement(sql, getTargetConnection().getName(), logger);
+        return new RunopsPreparedStatement(sql, getTargetConnection(), logger);
     }
 
     @Override

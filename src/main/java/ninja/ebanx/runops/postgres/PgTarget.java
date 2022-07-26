@@ -1,7 +1,9 @@
 package ninja.ebanx.runops.postgres;
 
+import ninja.ebanx.runops.QueryExecutor;
 import ninja.ebanx.runops.RunopsConnection;
 import ninja.ebanx.runops.TargetConnection;
+import ninja.ebanx.runops.api.RunopsApiClient;
 import org.json.JSONObject;
 
 import java.sql.DatabaseMetaData;
@@ -27,6 +29,11 @@ public class PgTarget implements TargetConnection {
     @Override
     public DatabaseMetaData getMetaData() {
         return new PgDatabaseMetaData(this.connection);
+    }
+
+    @Override
+    public QueryExecutor getQueryExecutor(RunopsApiClient client) {
+        return new PgQueryExecutor(client, this);
     }
 
     public String getURL() {

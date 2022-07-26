@@ -1,17 +1,15 @@
 package ninja.ebanx.runops;
 
 import ninja.ebanx.runops.api.RunopsApiClient;
-import ninja.ebanx.runops.utils.HandleResult;
-import org.json.JSONObject;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class RunopsStatement implements Statement {
 
-    private final JSONObject target;
+    private final TargetConnection target;
     private final Logger logger;
 
     private final RunopsApiClient clientApi;
@@ -19,22 +17,15 @@ public class RunopsStatement implements Statement {
     private int taskId;
     private int maxRows;
     private volatile boolean isClosed = false;
-    private boolean shouldFixExplainResult = false;
 
-    public RunopsStatement(String target, Logger logger) throws SQLException {
+    public RunopsStatement(TargetConnection target, Logger logger) {
         this(RunopsApiClient.create(), target, logger);
     }
 
-    public RunopsStatement(RunopsApiClient client, String target, Logger logger) throws SQLException {
+    public RunopsStatement(RunopsApiClient client, TargetConnection target, Logger logger) {
         this.logger = logger;
-
         clientApi = client;
-        try {
-            this.target = clientApi.getTarget(target);
-            logger.log(Level.INFO, "ready for statements at " + this.target.get("name"));
-        } catch (IOException e) {
-            throw new SQLException("invalid target " + target, e);
-        }
+        this.target = target;
     }
 
     @Override
@@ -126,31 +117,8 @@ public class RunopsStatement implements Statement {
 
     @Override
     public boolean execute(String sql) throws SQLException {
-        if (sql.toUpperCase().startsWith("EXPLAIN (FORMAT JSON")) {
-            shouldFixExplainResult = true;
-        }
-        try {
-            executeTask(sql);
-            return true;
-        } catch (IOException | InterruptedException e) {
-            throw new SQLException(e);
-        }
-    }
-
-    private void executeTask(String sql) throws IOException, InterruptedException {
-        var t = clientApi.createTask(target.getString("name"), sql);
-        taskId = t.getInt("id");
-        logger.info("task " + taskId + " created");
-
-        if (t.getString("task_logs").startsWith("https://")) {
-            var taskLog = clientApi.getTaskLogs(taskId);
-            plainResult = clientApi.getTaskLogsData(taskLog.getString("logs_url"));
-        } else {
-            plainResult = new StringReader(t.getString("task_logs"));
-        }
-        if (shouldFixExplainResult) {
-            plainResult = HandleResult.tidyQueryPlan(plainResult);
-        }
+        plainResult = target.getQueryExecutor(clientApi).execute(sql);
+        return plainResult != null;
     }
 
     @Override

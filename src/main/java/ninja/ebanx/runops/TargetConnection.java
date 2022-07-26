@@ -1,5 +1,7 @@
 package ninja.ebanx.runops;
 
+import ninja.ebanx.runops.api.RunopsApiClient;
+import ninja.ebanx.runops.mysql.MySqlTarget;
 import ninja.ebanx.runops.postgres.PgTarget;
 import org.json.JSONObject;
 
@@ -19,10 +21,12 @@ public interface TargetConnection {
 
     DatabaseMetaData getMetaData();
 
+    QueryExecutor getQueryExecutor(RunopsApiClient client);
+
     static TargetConnection of(JSONObject target, RunopsConnection connection) throws SQLException {
         return switch (target.getString("type")) {
             case "postgres" -> new PgTarget(target, connection);
-            case "mysql" -> throw new SQLException("target type not implemented yet");
+            case "mysql" -> new MySqlTarget(target, connection);
             default -> throw new SQLException("target type not supported");
         };
     }

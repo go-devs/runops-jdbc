@@ -21,7 +21,7 @@ class RunopsResultSetTest extends Mockito {
     void getString() throws IOException, InterruptedException, SQLException {
         // Arrange
         HttpClient httpClient = mock(HttpClient.class);
-        var call1 = ApiCall.createApiCall(200, "{\"name\":\"xpto\"}");
+        var call1 = ApiCall.createApiCall(200, "{\"name\":\"xpto\",\"type\":\"postgres\"}");
         var call2 = ApiCall.createApiCall(201, """
                 {
                     "description":null,
@@ -41,7 +41,7 @@ class RunopsResultSetTest extends Mockito {
                 .thenAnswer(call2);
         var roClient = new RunopsApiClient(httpClient);
         // Act
-        try (var stmt = new RunopsStatement(roClient, "xpto", Logger.getAnonymousLogger())) {
+        try (var stmt = new RunopsStatement(roClient, TargetConnection.of(roClient.getTarget("xpto"), null), Logger.getAnonymousLogger())) {
             var rst = stmt.executeQuery("select * from information_schema.columns");
             var rowCount = 0;
             while (rst.next()) {

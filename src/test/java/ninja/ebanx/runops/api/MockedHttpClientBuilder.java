@@ -14,10 +14,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class MockedHttpClientBuilder {
-    private List<ApiCall> calls;
+    private final List<ApiCall> calls;
 
     public MockedHttpClientBuilder() {
         calls = new ArrayList<>();
+    }
+
+    public ApiCall getCall(int index) {
+        return calls.get(index);
     }
 
     public MockedHttpClientBuilder addResponse(int statusCode, String body) {
@@ -26,15 +30,18 @@ public class MockedHttpClientBuilder {
     }
 
     public MockedHttpClientBuilder withTarget(String name, String type) {
-        this.addResponse(200, "{\"name\":\"" + name + "\", \"type\":\"" + type + "\"}");
-        return this;
+        return this.addResponse(200, "{\"name\":\"" + name + "\", \"type\":\"" + type + "\"}");
+    }
+
+    public MockedHttpClientBuilder withTask(int id, String taskLogs, String status) {
+        return this.addResponse(201, "{\"id\": " + id + ", \"task_logs\": \"" + taskLogs + "\",\"status\":\"" + status + "\"}");
     }
 
     public HttpClient build() throws IOException, InterruptedException {
         HttpClient httpClient = mock(HttpClient.class);
         var answers = when(httpClient.send(any(HttpRequest.class), ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()));
         for(var call: calls) {
-            answers.thenAnswer(call);
+            answers = answers.thenAnswer(call);
         }
         RunopsApiClient.DEFAULT_CLIENT = () -> httpClient;
         return httpClient;

@@ -14,12 +14,12 @@ import java.util.logging.Logger;
 public class RunopsPreparedStatement extends RunopsStatement implements PreparedStatement {
     private final ParameterizedQuery query;
 
-    public RunopsPreparedStatement(String query, String target, Logger logger) throws SQLException {
+    public RunopsPreparedStatement(String query, TargetConnection target, Logger logger) throws SQLException {
         super(target, logger);
         this.query = new ParameterizedQuery(query);
     }
 
-    public RunopsPreparedStatement(String query, RunopsApiClient client, String target, Logger logger) throws SQLException {
+    public RunopsPreparedStatement(String query, RunopsApiClient client, TargetConnection target, Logger logger) throws SQLException {
         super(client, target, logger);
         this.query = new ParameterizedQuery(query);
     }

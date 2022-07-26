@@ -1,6 +1,7 @@
 package ninja.ebanx.runops;
 
 import ninja.ebanx.runops.api.ApiCall;
+import ninja.ebanx.runops.api.MockedHttpClientBuilder;
 import ninja.ebanx.runops.api.RunopsApiClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -23,14 +24,14 @@ class RunopsStatementTest extends Mockito {
     void execute() throws SQLException, IOException, InterruptedException {
         // Arrange
         HttpClient httpClient = mock(HttpClient.class);
-        var call1 = ApiCall.createApiCall(200, "{\"name\":\"target\"}");
-        var call2 = ApiCall.createApiCall(201, "{\"id\": 123, \"task_logs\": \"\"}");
+        var call1 = ApiCall.createApiCall(200, "{\"name\":\"target\",\"type\":\"postgres\"}");
+        var call2 = ApiCall.createApiCall(201, "{\"id\": 123, \"task_logs\": \"\",\"status\":\"success\"}");
         when(httpClient.send(any(HttpRequest.class), ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                 .thenAnswer(call1)
                 .thenAnswer(call2);
         var roClient = new RunopsApiClient(httpClient);
         // Act
-        try (var st = new RunopsStatement(roClient, "target", Logger.getAnonymousLogger())) {
+        try (var st = new RunopsStatement(roClient, TargetConnection.of(roClient.getTarget("target"), null), Logger.getAnonymousLogger())) {
             st.execute("select * from merchant.merchants");
         }
         // Assert
@@ -40,15 +41,34 @@ class RunopsStatementTest extends Mockito {
     }
 
     @Test
+    void execute_ShouldFail() throws SQLException, IOException, InterruptedException {
+        // Arrange
+        MockedHttpClientBuilder builder = new MockedHttpClientBuilder();
+        HttpClient httpClient = builder
+                .withTarget("target", "postgres")
+                .withTask(123, "Query error", "failure")
+                .build();
+        var roClient = new RunopsApiClient(httpClient);
+        // Act & Assert
+        try (var st = new RunopsStatement(roClient, TargetConnection.of(roClient.getTarget("target"), null), Logger.getAnonymousLogger())) {
+            try {
+                st.execute("select * from merchant.merchants");
+            } catch (SQLException e) {
+                assertEquals("Query error", e.getMessage());
+            }
+        }
+    }
+
+    @Test
     void executeUpdate_ShouldFail() throws SQLException, IOException, InterruptedException {
         // Arrange
         HttpClient httpClient = mock(HttpClient.class);
-        var call1 = ApiCall.createApiCall(200, "{\"name\":\"target\"}");
+        var call1 = ApiCall.createApiCall(200, "{\"name\":\"target\",\"type\":\"postgres\"}");
         when(httpClient.send(any(HttpRequest.class), ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                 .thenAnswer(call1);
         var roClient = new RunopsApiClient(httpClient);
         // Act
-        try (var st = new RunopsStatement(roClient, "target", Logger.getAnonymousLogger())) {
+        try (var st = new RunopsStatement(roClient, TargetConnection.of(roClient.getTarget("target"), null), Logger.getAnonymousLogger())) {
             String sql = "update some_table set column = 123 where id = 1";
             assertThrows(
                     SQLFeatureNotSupportedException.class,
